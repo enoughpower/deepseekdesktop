@@ -19,6 +19,7 @@ import http from "node:http";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DSH_BIN = join(HERE, "node_modules", "@deepseek-ai", "dsh", "lib", "bin.js");
 const PRUNE_PATCH = join(HERE, "prune.patch.yml");
+const GIT_PATCH = join(HERE, "git.patch.yml");
 
 /** Build the backend environment. A Finder-launched app inherits a bare PATH,
  *  so we restore the standard macOS search path plus the Homebrew roots. */
@@ -50,6 +51,7 @@ import { existsSync } from "node:fs";
 // optional provider/telemetry rows whose packages are pruned from the bundle.
 const launcherArgs = [DSH_BIN, "web"];
 if (existsSync(PRUNE_PATCH)) launcherArgs.push("--patch", PRUNE_PATCH);
+if (existsSync(GIT_PATCH)) launcherArgs.push("--patch", GIT_PATCH);
 launcherArgs.push("--host", "127.0.0.1", "--port", "0");
 
 const child = spawn(
