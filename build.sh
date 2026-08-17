@@ -54,10 +54,13 @@ echo "==> copying node_modules and pruning"
 cp -a "$ROOT/node_modules" "$BACKEND/node_modules"
 "$ROOT/prune.sh" "$BACKEND/node_modules"
 
-# --- 1b. integrated Git viewer plugins (tracked source, not npm deps) -------
+# --- 1b. integrated desktop plugins (tracked source, not npm deps) ----------
+# Copy directory CONTENTS (`/.`) so a destination that already exists from the
+# node_modules copy is merged, never nested one level deeper.
 mkdir -p "$BACKEND/node_modules/@deepseek-ai"
-cp -a "$ROOT/plugins/dsh-git" "$BACKEND/node_modules/@deepseek-ai/dsh-git"
-cp -a "$ROOT/plugins/dsh-client-ui-git" "$BACKEND/node_modules/@deepseek-ai/dsh-client-ui-git"
+for p in dsh-git dsh-client-ui-git dsh-billing dsh-client-ui-billing; do
+  cp -a "$ROOT/plugins/$p/." "$BACKEND/node_modules/@deepseek-ai/$p/"
+done
 
 # --- 1c. Git nav icon in the settings panel (idempotent patch) --------------
 # ui-settings-general maps nav glyphs by section id; teach it the "git" id so
@@ -97,6 +100,7 @@ codesign --force --sign - "$BACKEND/node" 2>/dev/null || true
 cp "$ROOT/launcher.mjs" "$BACKEND/launcher.mjs"
 cp "$ROOT/prune.patch.yml" "$BACKEND/prune.patch.yml"
 cp "$ROOT/git.patch.yml" "$BACKEND/git.patch.yml"
+cp "$ROOT/billing.patch.yml" "$BACKEND/billing.patch.yml"
 
 # --- 4. compile the native WKWebView shell ---------------------------------
 echo "==> compiling Swift shell"

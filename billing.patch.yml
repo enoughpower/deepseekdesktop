@@ -1,0 +1,13 @@
+# Desktop-app overlay: register the DeepSeek billing/usage plugins.
+#
+# - `billing` is the host half: a `/billing` JSON API that queries the official
+#   Get User Balance endpoint and records the app's own token consumption into
+#   a per-day local store for the usage chart.
+# - `ui-billing` is the browser half: a settings section with balance cards,
+#   a recharge entry, and a consumption chart with switchable time dimension.
+- insert:
+    - id: billing
+      name: '@deepseek-ai/dsh-billing'
+
+    - id: ui-billing
+      name: '@deepseek-ai/dsh-client-ui-billing'
