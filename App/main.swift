@@ -125,6 +125,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         appMenu.addItem(NSMenuItem.separator())
         appMenu.addItem(withTitle: "退出", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appMenuItem.submenu = appMenu
+
+        // Edit menu — enables ⌘C / ⌘V / ⌘X / ⌘A / undo / redo in the WKWebView.
+        let editMenuItem = NSMenuItem()
+        mainMenu.addItem(editMenuItem)
+        let editMenu = NSMenu(title: "编辑")
+        editMenu.addItem(withTitle: "撤销", action: Selector(("undo:")), keyEquivalent: "z")
+        editMenu.addItem(withTitle: "重做", action: Selector(("redo:")), keyEquivalent: "Z")
+        editMenu.addItem(NSMenuItem.separator())
+        editMenu.addItem(withTitle: "剪切", action: Selector(("cut:")), keyEquivalent: "x")
+        editMenu.addItem(withTitle: "复制", action: Selector(("copy:")), keyEquivalent: "c")
+        editMenu.addItem(withTitle: "粘贴", action: Selector(("paste:")), keyEquivalent: "v")
+        editMenu.addItem(withTitle: "全选", action: Selector(("selectAll:")), keyEquivalent: "a")
+        editMenuItem.submenu = editMenu
+
         NSApp.mainMenu = mainMenu
     }
 
