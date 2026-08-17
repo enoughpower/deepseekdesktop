@@ -1,0 +1,16 @@
+# Desktop-app profile overlay: disable optional rows whose packages are
+# pruned from the bundled node_modules to keep the app small.
+#
+# - `llm-pi-ai` is the Pi.ai multi-provider adapter (pulls ~110 MB of
+#   @mistralai/@google/@anthropic-ai/@aws-sdk/@opentelemetry/openai SDKs).
+# - `session-telemetry-otel` is the OTLP telemetry exporter (disabled by
+#   default anyway; the launcher also sets DSH_TELEMETRY_DISABLED=1).
+#
+# Set KEEP_EXTRA_PROVIDERS=1 when building to retain these packages; this
+# patch then only disables telemetry, which stays a harmless no-op.
+
+- id: llm-pi-ai
+  disabled: true
+
+- id: session-telemetry-otel
+  disabled: true
