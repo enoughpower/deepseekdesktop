@@ -133,10 +133,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         editMenu.addItem(withTitle: "撤销", action: Selector(("undo:")), keyEquivalent: "z")
         editMenu.addItem(withTitle: "重做", action: Selector(("redo:")), keyEquivalent: "Z")
         editMenu.addItem(NSMenuItem.separator())
-        editMenu.addItem(withTitle: "剪切", action: Selector(("cut:")), keyEquivalent: "x")
-        editMenu.addItem(withTitle: "复制", action: Selector(("copy:")), keyEquivalent: "c")
-        editMenu.addItem(withTitle: "粘贴", action: Selector(("paste:")), keyEquivalent: "v")
-        editMenu.addItem(withTitle: "全选", action: Selector(("selectAll:")), keyEquivalent: "a")
+        editMenu.addItem(withTitle: "剪切", action: #selector(NSTextView.cut(_:)), keyEquivalent: "x")
+        editMenu.addItem(withTitle: "复制", action: #selector(NSTextView.copy(_:)), keyEquivalent: "c")
+        editMenu.addItem(withTitle: "粘贴", action: #selector(NSTextView.paste(_:)), keyEquivalent: "v")
+        editMenu.addItem(withTitle: "全选", action: #selector(NSTextView.selectAll(_:)), keyEquivalent: "a")
         editMenuItem.submenu = editMenu
 
         NSApp.mainMenu = mainMenu
