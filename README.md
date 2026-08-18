@@ -27,6 +27,7 @@ desktop/
 ├── git.patch.yml           # 注册内置 Git 插件
 ├── billing.patch.yml       # 注册内置余额/消费插件
 ├── updater.patch.yml       # 注册内置版本号/检查更新插件
+├── image-input.patch.yml   # 注册内置图片转文字插件
 ├── prune.sh                # node_modules 精简脚本
 ├── build.sh                # 一键构建
 ├── plugins/                # 内置插件源码（构建时拷入后端 node_modules）
@@ -92,3 +93,24 @@ KEEP_EXTRA_PROVIDERS=1 ./build.sh
 | `plugins/dsh-updater/` | 宿主半部：`/updater` JSON API（version / check / update / status） |
 | `plugins/dsh-client-ui-updater/` | 浏览器半部：右上角版本徽标 + 设置里的「检查更新」区块 |
 | `updater.patch.yml` | 注册这两个插件（launcher 启动时经 `--patch` 传入） |
+
+## 图片转文字输入
+
+内置了第三方插件 **dsh-plugin-image-input**（npm 包，见其
+[GitHub 仓库](https://github.com/Elohia/dsh-plugin-image-input)），给纯文本 LLM
+（DeepSeek 等无视觉模型）提供图片输入接管：
+
+- 在输入框里照常**粘贴 / 拖拽图片**，按 Enter 或点发送时，插件会自动把图片转成
+  结构化文字描述一起发出（当前模型**支持**图片时完全放行，走原生通道）。
+- 也可先点输入框左侧的 **🖼️ 图片转文字** 按钮，只把描述插入输入框。
+- 设置页新增「**图片转文字**」分节：填 `baseUrl` / `model` / `apiKey` / `maxTokens`
+  （任意 OpenAI 兼容视觉端点，如 qwen-vl / gpt-4o / glm-4v），保存即生效，
+  配置存于 `~/.config/mm-vision/config.json`。
+
+| 文件 | 作用 |
+|---|---|
+| `plugins/dsh-plugin-image-input/` | 插件源码（宿主半：`/plugins/mmv/*` 路由；浏览器半：发送接管 + 按钮 + 设置表单） |
+| `image-input.patch.yml` | 注册该插件（launcher 经 `--patch` 传入） |
+
+launcher 还会把后端目录（含内置 `node` 二进制）放在 `PATH` 最前，确保插件跑视觉
+子进程时用的是应用自带的 Node，而非可能损坏的系统 Node。

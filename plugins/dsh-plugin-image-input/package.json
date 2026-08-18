@@ -1,0 +1,36 @@
+{
+  "name": "dsh-plugin-image-input",
+  "version": "0.1.1",
+  "description": "图片转文字输入插件：给无视觉能力的纯文本 LLM（DeepSeek 等）提供图片输入接管。输入框粘贴/拖拽图片后一键转为结构化文字描述；视觉 API 配置在设置页填写，支持任意 OpenAI 兼容视觉模型（qwen-vl / gpt-4o / glm-4v 等）。多模态模型下自动让位，不劫持原生图片通道。",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Elohia/dsh-plugin-image-input.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Elohia/dsh-plugin-image-input/issues"
+  },
+  "homepage": "https://github.com/Elohia/dsh-plugin-image-input#readme",
+  "dsh": {
+    "client": {
+      "platform": "web"
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "dependencies": {},
+  "license": "MIT"
+}

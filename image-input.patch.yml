@@ -1,0 +1,9 @@
+# Desktop-app overlay: register the image-to-text input plugin.
+#
+# `image-input` is both halves in one package: a host half exposing local
+# /plugins/mmv/* routes (vision API config + base64 image analysis via a
+# node subprocess) and a browser half (input-box send interception + a
+# 🖼️ 图片转文字 button + a "图片转文字" settings section).
+- insert:
+    - id: image-input
+      name: 'dsh-plugin-image-input'

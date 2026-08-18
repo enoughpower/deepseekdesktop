@@ -61,6 +61,11 @@ mkdir -p "$BACKEND/node_modules/@deepseek-ai"
 for p in dsh-git dsh-client-ui-git dsh-billing dsh-client-ui-billing dsh-updater dsh-client-ui-updater; do
   cp -a "$ROOT/plugins/$p/." "$BACKEND/node_modules/@deepseek-ai/$p/"
 done
+# Unscoped third-party plugin: lands at node_modules/dsh-plugin-image-input.
+if [ -d "$ROOT/plugins/dsh-plugin-image-input" ]; then
+  mkdir -p "$BACKEND/node_modules"
+  cp -a "$ROOT/plugins/dsh-plugin-image-input/." "$BACKEND/node_modules/dsh-plugin-image-input/"
+fi
 
 # --- 1c. Settings-panel nav icons (idempotent patch) ------------------------
 # ui-settings-general maps nav glyphs by section id; teach it the "git" and
@@ -107,6 +112,7 @@ cp "$ROOT/prune.patch.yml" "$BACKEND/prune.patch.yml"
 cp "$ROOT/git.patch.yml" "$BACKEND/git.patch.yml"
 cp "$ROOT/billing.patch.yml" "$BACKEND/billing.patch.yml"
 cp "$ROOT/updater.patch.yml" "$BACKEND/updater.patch.yml"
+cp "$ROOT/image-input.patch.yml" "$BACKEND/image-input.patch.yml"
 
 # --- 4. compile the native WKWebView shell ---------------------------------
 echo "==> compiling Swift shell"

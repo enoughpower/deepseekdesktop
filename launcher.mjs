@@ -22,12 +22,17 @@ const PRUNE_PATCH = join(HERE, "prune.patch.yml");
 const GIT_PATCH = join(HERE, "git.patch.yml");
 const BILLING_PATCH = join(HERE, "billing.patch.yml");
 const UPDATER_PATCH = join(HERE, "updater.patch.yml");
+const IMAGE_INPUT_PATCH = join(HERE, "image-input.patch.yml");
 
 /** Build the backend environment. A Finder-launched app inherits a bare PATH,
- *  so we restore the standard macOS search path plus the Homebrew roots. */
+ *  so we restore the standard macOS search path plus the Homebrew roots.
+ *  The bundled `node` lives at <backend>/node; putting the backend dir first
+ *  lets child processes (e.g. the image-input plugin's vision subprocess) run
+ *  `node` against the bundled binary instead of a possibly-broken system one. */
 function buildEnv() {
   const env = { ...process.env };
   const wanted = [
+    HERE,
     "/opt/homebrew/bin",
     "/usr/local/bin",
     "/usr/local/sbin",
@@ -56,6 +61,7 @@ if (existsSync(PRUNE_PATCH)) launcherArgs.push("--patch", PRUNE_PATCH);
 if (existsSync(GIT_PATCH)) launcherArgs.push("--patch", GIT_PATCH);
 if (existsSync(BILLING_PATCH)) launcherArgs.push("--patch", BILLING_PATCH);
 if (existsSync(UPDATER_PATCH)) launcherArgs.push("--patch", UPDATER_PATCH);
+if (existsSync(IMAGE_INPUT_PATCH)) launcherArgs.push("--patch", IMAGE_INPUT_PATCH);
 launcherArgs.push("--host", "127.0.0.1", "--port", "0");
 
 const child = spawn(
