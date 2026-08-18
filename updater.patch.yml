@@ -1,0 +1,14 @@
+# Desktop-app overlay: register the harness self-update plugins.
+#
+# - `updater` is the host half: a `/updater` JSON API that reports the
+#   installed harness version, compares it against the npm registry, and
+#   applies updates in place (replacing @deepseek-ai/* packages) before
+#   restarting the app.
+# - `ui-updater` is the browser half: a top-right version badge plus a
+#   "检查更新" settings section with check/update controls.
+- insert:
+    - id: updater
+      name: '@deepseek-ai/dsh-updater'
+
+    - id: ui-updater
+      name: '@deepseek-ai/dsh-client-ui-updater'

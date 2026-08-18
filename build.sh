@@ -58,29 +58,34 @@ cp -a "$ROOT/node_modules" "$BACKEND/node_modules"
 # Copy directory CONTENTS (`/.`) so a destination that already exists from the
 # node_modules copy is merged, never nested one level deeper.
 mkdir -p "$BACKEND/node_modules/@deepseek-ai"
-for p in dsh-git dsh-client-ui-git dsh-billing dsh-client-ui-billing; do
+for p in dsh-git dsh-client-ui-git dsh-billing dsh-client-ui-billing dsh-updater dsh-client-ui-updater; do
   cp -a "$ROOT/plugins/$p/." "$BACKEND/node_modules/@deepseek-ai/$p/"
 done
 
-# --- 1c. Git nav icon in the settings panel (idempotent patch) --------------
-# ui-settings-general maps nav glyphs by section id; teach it the "git" id so
-# the Git section shows a branch icon instead of the generic gear.
+# --- 1c. Settings-panel nav icons (idempotent patch) ------------------------
+# ui-settings-general maps nav glyphs by section id; teach it the "git" and
+# "updater" ids so those sections show fitting icons instead of the gear.
 python3 - "$BACKEND/node_modules/@deepseek-ai/dsh-client-ui-settings-general/lib/client.js" << 'PYEOF'
 import sys, pathlib
 p = pathlib.Path(sys.argv[1])
 s = p.read_text()
-if 'if (id === "git") return' not in s:
+icons = [("git", "IconBranchOutline16"), ("updater", "IconRefreshOutline16")]
+if not all(f'if (id === "{i[0]}") return' in s for i in icons):
     lines = s.split("\n")
     for i, line in enumerate(lines):
         if "IconSettingsOutline16, {" in line and i + 1 < len(lines) and "navIcon" in lines[i + 1]:
             indent = line[: len(line) - len(line.lstrip("\t "))]
             prop = lines[i + 1][: len(lines[i + 1]) - len(lines[i + 1].lstrip("\t "))]
-            block = [
-                f'{indent}if (id === "git") return (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.IconBranchOutline16, {{',
-                f'{prop}className: SettingsRoot_module_css_default.navIcon,',
-                f'{prop}size: 16',
-                f'{indent}}});',
-            ]
+            block = []
+            for section_id, icon in icons:
+                if f'if (id === "{section_id}") return' in s:
+                    continue
+                block += [
+                    f'{indent}if (id === "{section_id}") return (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.{icon}, {{',
+                    f'{prop}className: SettingsRoot_module_css_default.navIcon,',
+                    f'{prop}size: 16',
+                    f'{indent}}});',
+                ]
             lines[i:i] = block
             break
     p.write_text("\n".join(lines))
@@ -101,6 +106,7 @@ cp "$ROOT/launcher.mjs" "$BACKEND/launcher.mjs"
 cp "$ROOT/prune.patch.yml" "$BACKEND/prune.patch.yml"
 cp "$ROOT/git.patch.yml" "$BACKEND/git.patch.yml"
 cp "$ROOT/billing.patch.yml" "$BACKEND/billing.patch.yml"
+cp "$ROOT/updater.patch.yml" "$BACKEND/updater.patch.yml"
 
 # --- 4. compile the native WKWebView shell ---------------------------------
 echo "==> compiling Swift shell"

@@ -24,8 +24,12 @@ desktop/
 │   └── icon.icns           # 已生成的图标
 ├── launcher.mjs            # 后端监督进程：spawn dsh web，确认就绪后输出 DSH_READY=<url>
 ├── prune.patch.yml         # 禁用被裁剪掉的插件行（llm-pi-ai、telemetry）
+├── git.patch.yml           # 注册内置 Git 插件
+├── billing.patch.yml       # 注册内置余额/消费插件
+├── updater.patch.yml       # 注册内置版本号/检查更新插件
 ├── prune.sh                # node_modules 精简脚本
 ├── build.sh                # 一键构建
+├── plugins/                # 内置插件源码（构建时拷入后端 node_modules）
 └── package.json            # 仅声明依赖 @deepseek-ai/dsh
 ```
 
@@ -70,3 +74,21 @@ KEEP_EXTRA_PROVIDERS=1 ./build.sh
 5. 退出应用时，壳向 launcher 发 `SIGTERM`，launcher 转发给 `dsh web` 完成优雅退出。
 
 后端只监听 `127.0.0.1` 的随机端口，避免端口冲突与暴露到局域网。
+
+## 版本号与检查更新
+
+应用在**窗口右上角**常驻显示当前 DeepSeek Harness 版本号（`@deepseek-ai/dsh` 包版本，
+如 `v0.1.0-rc.6`）。「设置 → 检查更新」里可以：
+
+- **检查更新**：对比 npm registry 上 `@deepseek-ai/dsh` 的最新版本；
+- **立即更新**：后台下载最新闭包（dsh 及其全部 `@deepseek-ai/*` 依赖）并原子替换进
+  应用包内的 `node_modules`，完成后自动重启应用（重启前会重新签名，保证 arm64
+  上的 ad-hoc 签名仍然有效）。
+
+实现是内置插件（与 git/billing 同模式）：
+
+| 文件 | 作用 |
+|---|---|
+| `plugins/dsh-updater/` | 宿主半部：`/updater` JSON API（version / check / update / status） |
+| `plugins/dsh-client-ui-updater/` | 浏览器半部：右上角版本徽标 + 设置里的「检查更新」区块 |
+| `updater.patch.yml` | 注册这两个插件（launcher 启动时经 `--patch` 传入） |
