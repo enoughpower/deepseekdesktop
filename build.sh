@@ -61,10 +61,17 @@ mkdir -p "$BACKEND/node_modules/@deepseek-ai"
 for p in dsh-git dsh-client-ui-git dsh-billing dsh-client-ui-billing dsh-updater dsh-client-ui-updater; do
   cp -a "$ROOT/plugins/$p/." "$BACKEND/node_modules/@deepseek-ai/$p/"
 done
-# Unscoped third-party plugin: lands at node_modules/dsh-plugin-image-input.
-if [ -d "$ROOT/plugins/dsh-plugin-image-input" ]; then
-  mkdir -p "$BACKEND/node_modules"
-  cp -a "$ROOT/plugins/dsh-plugin-image-input/." "$BACKEND/node_modules/dsh-plugin-image-input/"
+# Unscoped third-party plugins: land at node_modules/<name> (not under @deepseek-ai).
+mkdir -p "$BACKEND/node_modules"
+for p in dsh-plugin-image-input dsh-skill-manager; do
+  if [ -d "$ROOT/plugins/$p" ]; then
+    cp -a "$ROOT/plugins/$p/." "$BACKEND/node_modules/$p/"
+  fi
+done
+# Scoped third-party plugin (@opendsh/*): lands at node_modules/@opendsh/<name>.
+if [ -d "$ROOT/plugins/@opendsh/dsh-plugin-setting-mcp" ]; then
+  mkdir -p "$BACKEND/node_modules/@opendsh"
+  cp -a "$ROOT/plugins/@opendsh/dsh-plugin-setting-mcp/." "$BACKEND/node_modules/@opendsh/dsh-plugin-setting-mcp/"
 fi
 
 # --- 1c. Settings-panel nav icons (idempotent patch) ------------------------
@@ -113,6 +120,8 @@ cp "$ROOT/git.patch.yml" "$BACKEND/git.patch.yml"
 cp "$ROOT/billing.patch.yml" "$BACKEND/billing.patch.yml"
 cp "$ROOT/updater.patch.yml" "$BACKEND/updater.patch.yml"
 cp "$ROOT/image-input.patch.yml" "$BACKEND/image-input.patch.yml"
+cp "$ROOT/skill-manager.patch.yml" "$BACKEND/skill-manager.patch.yml"
+cp "$ROOT/mcp-settings.patch.yml" "$BACKEND/mcp-settings.patch.yml"
 
 # --- 4. compile the native WKWebView shell ---------------------------------
 echo "==> compiling Swift shell"
