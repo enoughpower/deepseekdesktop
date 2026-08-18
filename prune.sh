@@ -12,8 +12,9 @@ cd "$TARGET"
 # ---------------------------------------------------------------------------
 # 1. Optional multi-provider SDK stack (Pi.ai) + session telemetry.
 #    The bundled profile disables the `llm-pi-ai` and `session-telemetry-otel`
-#    rows, so these packages are never loaded. Saves ~110 MB.
-#    Set KEEP_EXTRA_PROVIDERS=1 to retain full multi-provider support.
+#    rows only for minimal builds, so these packages are never loaded. Saves
+#    ~110 MB. The desktop build defaults to KEEP_EXTRA_PROVIDERS=1 (full build);
+#    set KEEP_EXTRA_PROVIDERS=0 to prune them away.
 # ---------------------------------------------------------------------------
 if [ "${KEEP_EXTRA_PROVIDERS:-0}" != "1" ]; then
   for p in \

@@ -2,11 +2,16 @@
 # Build the DeepSeek Harness macOS desktop app into dist/DeepSeekHarness.app.
 #
 # Usage:
-#   ./build.sh                 minimal build (DeepSeek provider only, ~small)
-#   KEEP_EXTRA_PROVIDERS=1 ./build.sh   keep Pi.ai/multi-provider SDKs (~+110 MB)
+#   ./build.sh                 full multi-provider build (Pi.ai + all SDKs, default)
+#   KEEP_EXTRA_PROVIDERS=0 ./build.sh   minimal build (DeepSeek only, ~110 MB smaller)
 #
 # Requires: macOS with Xcode command line tools (swiftc, codesign), node + npm.
 set -euo pipefail
+
+# Default to the full multi-provider build; set KEEP_EXTRA_PROVIDERS=0 for a
+# DeepSeek-only minimal build. Export so prune.sh and the patch generation below
+# agree on the same setting.
+export KEEP_EXTRA_PROVIDERS="${KEEP_EXTRA_PROVIDERS:-1}"
 
 APP_NAME="DeepSeekHarness"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -120,7 +125,20 @@ codesign --force --sign - "$BACKEND/node" 2>/dev/null || true
 
 # --- 3. launcher + profile overlay ----------------------------------------
 cp "$ROOT/launcher.mjs" "$BACKEND/launcher.mjs"
-cp "$ROOT/prune.patch.yml" "$BACKEND/prune.patch.yml"
+# prune.patch.yml: without KEEP_EXTRA_PROVIDERS the Pi.ai multi-provider row is
+# disabled (its SDKs were deleted by prune.sh); with it, only the (no-op by
+# default) OTLP telemetry row stays disabled so Pi.ai actually loads.
+if [ "${KEEP_EXTRA_PROVIDERS:-0}" = "1" ]; then
+  cat > "$BACKEND/prune.patch.yml" << 'PATCH'
+# Built with KEEP_EXTRA_PROVIDERS=1: multi-provider SDKs are retained, so only
+# the OTLP telemetry exporter row stays disabled (no-op; launcher also sets
+# DSH_TELEMETRY_DISABLED=1).
+- id: session-telemetry-otel
+  disabled: true
+PATCH
+else
+  cp "$ROOT/prune.patch.yml" "$BACKEND/prune.patch.yml"
+fi
 cp "$ROOT/git.patch.yml" "$BACKEND/git.patch.yml"
 cp "$ROOT/billing.patch.yml" "$BACKEND/billing.patch.yml"
 cp "$ROOT/updater.patch.yml" "$BACKEND/updater.patch.yml"

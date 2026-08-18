@@ -42,17 +42,19 @@ desktop/
 
 ```bash
 cd desktop
-./build.sh
-# 或：保留 Pi.ai 多供应商 SDK（体积 +~110 MB）
-KEEP_EXTRA_PROVIDERS=1 ./build.sh
+./build.sh                          # 默认：完整多供应商版（包含 Pi.ai / Mistral / Anthropic / Google / AWS Bedrock / OpenAI 等全部 SDK）
+KEEP_EXTRA_PROVIDERS=0 ./build.sh   # 最小版：仅 DeepSeek，约小 110 MB
 ```
 
 首次构建会 `npm install --omit=dev` 安装 `@deepseek-ai/dsh` 的生产依赖。
 
-## 体积是怎么省出来的
+> `build.sh` 默认 `export KEEP_EXTRA_PROVIDERS=1`（保留多供应商 SDK 与 `llm-pi-ai` 行启用）。
+> 设 `KEEP_EXTRA_PROVIDERS=0` 走精简路径：`prune.sh` 会删除 Pi.ai 相关 SDK，`prune.patch.yml` 把 `llm-pi-ai` 行置为 `disabled`。
+
+## 体积是怎么省出来的（仅 KEEP_EXTRA_PROVIDERS=0 时）
 
 1. **原生 WKWebView 壳**：复用系统 WebKit，不打包 Chromium（省 ~150 MB）。
-2. **精简 node_modules**（`prune.sh`，默认从 ~307 MB → ~94 MB）：
+2. **精简 node_modules**（`prune.sh`，仅最小构建时从 ~307 MB → ~94 MB）：
    - 去掉 Pi.ai 多供应商 SDK 栈（`@earendil-works/pi-ai` 及其拖入的
      `@mistralai`/`@google`/`@anthropic-ai`/`@aws-sdk`/`@opentelemetry`/`openai`，约 110 MB），
      通过 `prune.patch.yml` 把 `llm-pi-ai` 行置为 `disabled`；默认模型仍是
@@ -64,8 +66,9 @@ KEEP_EXTRA_PROVIDERS=1 ./build.sh
    node-pty、better-sqlite3）链接所需的导出符号。注意不能用完整 `strip`，否则 addon
    dlopen 时找不到符号而段错误。
 
-> 需要 Pi.ai / Mistral / Google / Anthropic / AWS Bedrock / OpenAI 等多供应商能力时，
-> 用 `KEEP_EXTRA_PROVIDERS=1 ./build.sh` 构建全量版（约 290 MB）。
+> 默认 `./build.sh` 产物约 290 MB，包含全部多供应商 SDK；构建后在 设置 → 模型 → **添加提供方**
+> 里可启用 amazon-bedrock / anthropic / google / google-vertex / mistral / openai / openrouter /
+> xai / groq / nvidia 等 30+ 提供方（llm-pi-ai 插件按需休眠加载，配置 provider 即可激活）。
 
 ## 工作原理
 
