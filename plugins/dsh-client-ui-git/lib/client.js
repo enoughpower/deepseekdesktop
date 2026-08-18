@@ -273,14 +273,25 @@ window.__ModuleLoader__.load({
     }
 
     // ── modal helper ────────────────────────────────────────────────────────
+    // The mask must CONTAIN the dialog: it is a positioned (z-index:130)
+    // full-overlay element, so a sibling dialog (static position) would be
+    // painted underneath it and all clicks would hit the mask (closing the
+    // dialog without running the action).
     function Modal({ title, children, onClose }) {
-      return jsxs(Fragment, { children: [
-        jsx("div", { className: "dshGitModalMask", onClick: onClose }),
-        jsx("div", { className: "dshGitModal", role: "dialog", "aria-modal": "true", children: jsxs(Fragment, { children: [
-          jsx("h4", { children: title }),
-          children,
-        ] }) }),
-      ] });
+      return jsx("div", {
+        className: "dshGitModalMask",
+        onClick: onClose,
+        children: jsx("div", {
+          className: "dshGitModal",
+          role: "dialog",
+          "aria-modal": "true",
+          onClick: (e) => e.stopPropagation(),
+          children: jsxs(Fragment, { children: [
+            jsx("h4", { children: title }),
+            children,
+          ] }),
+        }),
+      });
     }
 
     // ── full-screen Git panel ───────────────────────────────────────────────
@@ -319,11 +330,18 @@ window.__ModuleLoader__.load({
       const [pathInput, setPathInput] = react.useState("");
       const [menuFor, setMenuFor] = react.useState(null); // 文件行 "⋯" 菜单打开的行 path
 
-      // 点击页面任意处关闭文件行菜单
+      // 点击页面任意处关闭文件行菜单。注意：必须用冒泡阶段并忽略菜单内部的点击，
+      // 若用捕获阶段，document 捕获监听会在菜单项自己的 onClick 之前触发
+      // setMenuFor(null)，React 重渲染会把菜单从 DOM 移除，导致菜单项的点击被吞掉、
+      // 弹窗无法打开（已在真实浏览器中复现）。
       react.useEffect(() => {
-        const onDocClick = () => setMenuFor(null);
-        document.addEventListener("click", onDocClick, true);
-        return () => document.removeEventListener("click", onDocClick, true);
+        const onDocClick = (e) => {
+          const t = e.target;
+          if (t && t.closest && t.closest(".dshGitMenuWrap")) return; // 点击菜单/⋯ 时不自动关闭
+          setMenuFor(null);
+        };
+        document.addEventListener("click", onDocClick, false);
+        return () => document.removeEventListener("click", onDocClick, false);
       }, []);
 
       // initialize from the current session's workspace cwd (computed at the
