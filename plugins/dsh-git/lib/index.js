@@ -1,5 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { rm } from "node:fs/promises";
+import { resolve, sep } from "node:path";
 
 const execFileAsync = promisify(execFile);
 
@@ -323,6 +325,22 @@ const handlers = {
     return ok({ stdout: result.stdout, stderr: result.stderr });
   },
 
+  /** Remove files from the working tree (physical delete; works for untracked too). */
+  async remove(payload) {
+    const path = requirePath(payload);
+    const files = Array.isArray(payload.files) ? payload.files.filter((f) => typeof f === "string" && f.length > 0) : [];
+    if (files.length === 0) return fail("no-files", "no files to remove");
+    const root = resolve(path);
+    for (const f of files) {
+      const target = resolve(root, f);
+      if (target !== root && !target.startsWith(root + sep)) {
+        return fail("invalid-path", `移除路径越界：${f}`);
+      }
+      await rm(target, { recursive: true, force: true });
+    }
+    return ok({ stdout: `已移除 ${files.length} 个文件/目录` });
+  },
+
   async log(payload) {
     const path = requirePath(payload);
     const n = Number.isInteger(payload.n) && payload.n > 0 ? payload.n : 30;
@@ -345,29 +363,25 @@ const handlers = {
   async graphLog(payload) {
     const path = requirePath(payload);
     const n = Number.isInteger(payload.n) && payload.n > 0 ? payload.n : 100;
+    // --all --date-order：所有分支按时间交错，前端按父子关系自行分列（Git Graph 风格）。
     const result = await git(path, [
       "log",
       `-n${n}`,
-      "--graph",
+      "--all",
+      "--date-order",
       "--date=format:%Y-%m-%d %H:%M",
-      "--pretty=format:%h%x09%d%x09%an%x09%ad%x09%s",
+      "--pretty=format:%H%x09%d%x09%an%x09%ad%x09%P%x09%s",
     ]);
-    if (result.code !== 0) return fail("git-error", result.stderr || "git log --graph failed");
+    if (result.code !== 0) return fail("git-error", result.stderr || "git log failed");
     const rows = result.stdout.split("\n").filter(Boolean).map((line) => {
-      // graph prefix: chars like `*`, `|`, `\`, `/`, `_`, spaces up to the hash.
-      const m = line.match(/^([*|\\/_.\s-]*)([0-9a-f]{7,40})(?:\t(.*))?$/);
-      const graph = m ? m[1] : line.split("\t")[0] ?? "";
-      const hash = m ? m[2] : "";
-      const rest = m && m[3] !== undefined ? m[3] : line.split("\t").slice(1).join("\t");
-      const [refs, author, date, ...subjectParts] = rest.split("\t");
-      return {
-        graph,
-        hash,
-        refs: (refs ?? "").trim(),
-        author: author ?? "",
-        date: date ?? "",
-        subject: subjectParts.join("\t"),
-      };
+      const parts = line.split("\t");
+      const hash = parts[0] ?? "";
+      const refs = (parts[1] ?? "").trim();
+      const author = parts[2] ?? "";
+      const date = parts[3] ?? "";
+      const parents = (parts[4] ?? "").trim().split(/\s+/).filter(Boolean);
+      const subject = parts.slice(5).join("\t");
+      return { hash, refs, author, date, subject, parents };
     });
     return ok({ rows });
   },

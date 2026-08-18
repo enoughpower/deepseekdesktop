@@ -1,0 +1,9 @@
+# Desktop-app overlay: dsh-vision — near-native image understanding for
+# text-only models. Replaces the official llm-deepseek adapter with a vision
+# bridge (vision model observes images, DeepSeek writes the answer); original
+# images still pass through natively when the main model supports them.
+- id: llm-deepseek
+  disabled: true
+- insert:
+    - id: dsh-vision
+      name: "@oil-oil/dsh-vision"

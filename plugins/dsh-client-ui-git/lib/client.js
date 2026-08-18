@@ -16,7 +16,7 @@ window.__ModuleLoader__.load({
     // ── styles (theme-variable driven, matching the app) ────────────────────
     const css = [
       // full-screen overlay panel
-      ".dshGitOverlay{position:fixed;inset:0;z-index:120;display:flex;flex-direction:column;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary)}",
+      ".dshGitOverlay{position:fixed;inset:0;z-index:1200;display:flex;flex-direction:column;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary)}",
       ".dshGitTop{flex:none;display:flex;align-items:center;gap:10px;height:48px;padding:0 16px;border-bottom:1px solid var(--dsw-alias-border-l2)}",
       ".dshGitTopTitle{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--dsw-alias-label-primary);min-width:0}",
       ".dshGitBranch{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--dsw-alias-state-success-primary);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
@@ -87,14 +87,24 @@ window.__ModuleLoader__.load({
       ".dshGitMiniBtn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}",
       ".dshGitMiniBtn:disabled{opacity:.45;cursor:default}",
       ".dshGitMiniBtnDanger:hover:not(:disabled){color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary)}",
+      // 文件行 "⋯" 菜单
+      ".dshGitMenuWrap{position:relative;display:inline-flex}",
+      ".dshGitMoreBtn{flex:none;border:none;background:transparent;color:var(--dsw-alias-label-tertiary);cursor:pointer;font-size:14px;line-height:1;padding:2px 4px;border-radius:4px;font-family:inherit}",
+      ".dshGitMoreBtn:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}",
+      ".dshGitMenu{position:absolute;right:0;top:calc(100% + 4px);z-index:50;min-width:140px;padding:6px;display:flex;flex-direction:column;gap:2px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.18)}",
+      ".dshGitMenuItem{display:flex;align-items:center;width:100%;box-sizing:border-box;text-align:left;padding:8px 12px;border:none;border-radius:8px;background:transparent;color:var(--dsw-alias-label-primary);cursor:pointer;font-size:13px;line-height:1.5;font-family:inherit;white-space:nowrap}",
+      ".dshGitMenuItem:hover{background:var(--dsw-alias-interactive-bg-hover)}",
+      ".dshGitMenuItemDanger{color:var(--dsw-alias-state-error-primary)}",
+      ".dshGitMenuItemDanger:hover{color:var(--dsw-alias-state-error-primary);background:color-mix(in srgb,var(--dsw-alias-state-error-primary,#e5484d) 12%,transparent)}",
       ".dshGitBranchBox{margin-top:6px;padding:4px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-2);max-height:240px;overflow:auto}",
       ".dshGitToolbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}",
       // graph
       ".dshGitGraph{overflow:auto;flex:1;min-height:0;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-1);font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.7}",
-      ".dshGitGraphRow{display:flex;align-items:center;gap:0;min-height:22px;cursor:pointer;white-space:pre;padding:0 4px}",
+      ".dshGitGraphInner{position:relative;min-width:max-content}",
+      ".dshGitGraphSvg{position:absolute;top:0;left:0;z-index:2;pointer-events:none}",
+      ".dshGitGraphRow{display:flex;align-items:center;gap:8px;min-height:24px;cursor:pointer;white-space:nowrap;padding:0 8px 0 4px;position:relative;z-index:1}",
       ".dshGitGraphRow:hover{background:var(--dsw-alias-interactive-bg-hover)}",
       ".dshGitGraphRowSelected{background:var(--dsw-alias-interactive-bg-hover)}",
-      ".dshGitGraphGlyph{color:var(--dsw-alias-state-business-primary);flex:none}",
       ".dshGitGraphRefs{color:var(--dsw-alias-state-warn-primary);flex:none;font-size:11px}",
       ".dshGitGraphSubject{color:var(--dsw-alias-label-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
       ".dshGitGraphMeta{color:var(--dsw-alias-label-tertiary);font-size:11px;margin-left:auto;flex:none;padding-left:8px}",
@@ -307,6 +317,14 @@ window.__ModuleLoader__.load({
       const [modal, setModal] = react.useState(null); // {title, body, action}
       const [conflicts, setConflicts] = react.useState([]);
       const [pathInput, setPathInput] = react.useState("");
+      const [menuFor, setMenuFor] = react.useState(null); // 文件行 "⋯" 菜单打开的行 path
+
+      // 点击页面任意处关闭文件行菜单
+      react.useEffect(() => {
+        const onDocClick = () => setMenuFor(null);
+        document.addEventListener("click", onDocClick, true);
+        return () => document.removeEventListener("click", onDocClick, true);
+      }, []);
 
       // initialize from the current session's workspace cwd (computed at the
       // sidebar entry level via useSessions), falling back to manual path input.
@@ -455,6 +473,7 @@ window.__ModuleLoader__.load({
             runMutation("stage", { files: [f.path] });
           }
         };
+        const menuOpen = menuFor === f.path;
         return jsxs("li", {
           key: (isStaged ? "s" : "u") + f.path + f.status,
           className: diffFile === f.path && rightTab === "diff" && diffStaged === isStaged ? "dshGitSelected" : "",
@@ -468,24 +487,131 @@ window.__ModuleLoader__.load({
             }),
             jsx("span", { className: "dshGitCode " + changeClass(f.status, isStaged), children: statusLetter(f.status) }),
             jsx("button", { type: "button", title: f.path + (f.original ? " ← " + f.original : ""), onClick: () => showDiff(f.path, isStaged), children: f.path }),
-            jsx("span", { className: "dshGitBranchActions", children: [
-              !isStaged && f.status !== "??" ? jsx("button", { className: "dshGitMiniBtn dshGitMiniBtnDanger", type: "button", title: "丢弃改动", onClick: (e) => { e.stopPropagation(); setModal({ title: "丢弃改动", body: "确定丢弃 " + f.path + " 的工作区改动？此操作不可恢复。", action: () => runMutation("discard", { files: [f.path] }) }); }, children: "丢弃" }) : null,
+            jsxs("span", { className: "dshGitBranchActions", children: [
+              jsxs("span", { className: "dshGitMenuWrap", children: [
+                jsx("button", {
+                  className: "dshGitMoreBtn",
+                  type: "button",
+                  title: "更多操作",
+                  onClick: (e) => { e.stopPropagation(); setMenuFor(menuOpen ? null : f.path); },
+                  children: "⋯",
+                }),
+                menuOpen
+                  ? jsxs("div", { className: "dshGitMenu", children: [
+                      !isStaged && f.status !== "??"
+                        ? jsx("button", { className: "dshGitMenuItem", type: "button", onClick: () => { setMenuFor(null); setModal({ title: "丢弃改动", body: "确定丢弃 " + f.path + " 的工作区改动？此操作不可恢复。", action: () => runMutation("discard", { files: [f.path] }) }); }, children: "丢弃改动" })
+                        : null,
+                      jsx("button", { className: "dshGitMenuItem dshGitMenuItemDanger", type: "button", onClick: () => { setMenuFor(null); setModal({ title: "移除文件", body: "确定从工作区删除 " + f.path + "？此操作不可恢复。", action: () => runMutation("remove", { files: [f.path] }) }); }, children: "移除文件" }),
+                    ] })
+                  : null,
+              ] }),
             ] }),
           ],
         });
       };
 
-      const graphRows = graph.map((row, i) => {
+      // Git Graph 风格：主线固定左列，新分支向右占新列后竖直向下；
+      // 分叉/合并用直线斜接，中间行只画穿过的竖线（无提交则无圆点）。
+      const GRAPH_W = 10;
+      const GRAPH_H = 24;
+      const GRAPH_COLORS = ["#3b82f6", "#c4a054", "#f59e0b", "#22c55e", "#8b5cf6", "#06b6d4", "#ec4899", "#f97316"];
+      const sameHash = (a, b) => !!a && !!b && (a === b || a.startsWith(b) || b.startsWith(a));
+      const commits = graph.filter((r) => r.hash);
+      const reserved = [];
+      const lanes = commits.map((c) => {
+        let col = reserved.findIndex((h) => sameHash(h, c.hash));
+        if (col < 0) {
+          col = reserved.findIndex((h) => h == null);
+          if (col < 0) {
+            col = reserved.length;
+            reserved.push(c.hash);
+          } else {
+            reserved[col] = c.hash;
+          }
+        }
+        for (let k = 0; k < reserved.length; k++) {
+          if (sameHash(reserved[k], c.hash)) reserved[k] = null;
+        }
+        const parents = c.parents || [];
+        if (parents[0] && reserved.findIndex((h) => sameHash(h, parents[0])) < 0) {
+          reserved[col] = parents[0];
+        }
+        for (let p = 1; p < parents.length; p++) {
+          if (reserved.findIndex((h) => sameHash(h, parents[p])) >= 0) continue;
+          let empty = reserved.findIndex((h) => h == null);
+          if (empty < 0) reserved.push(parents[p]);
+          else reserved[empty] = parents[p];
+        }
+        while (reserved.length > 1 && reserved[reserved.length - 1] == null) reserved.pop();
+        return col;
+      });
+      const maxCols = Math.max(1, ...lanes.map((c) => c + 1), 1);
+      const gx = (c) => c * GRAPH_W + GRAPH_W / 2;
+      const gy = (i) => i * GRAPH_H + GRAPH_H / 2;
+      const colColor = (c) => GRAPH_COLORS[((c % GRAPH_COLORS.length) + GRAPH_COLORS.length) % GRAPH_COLORS.length];
+      const rowByHash = (h) => commits.findIndex((r) => sameHash(r.hash, h));
+      const graphLinks = [];
+      commits.forEach((r, i) => {
+        const childLane = lanes[i];
+        (r.parents || []).forEach((ph) => {
+          const pi = rowByHash(ph);
+          if (pi < 0) return;
+          const parentLane = lanes[pi];
+          const xC = gx(childLane), yC = gy(i);
+          const xP = gx(parentLane), yP = gy(pi);
+          const side = Math.max(childLane, parentLane);
+          const xS = gx(side);
+          const color = colColor(side);
+          let d;
+          if (childLane === parentLane) {
+            d = "M " + xC + " " + yC + " L " + xP + " " + yP;
+          } else {
+            d = "M " + xC + " " + yC;
+            if (childLane !== side) d += " L " + xS + " " + (yC + GRAPH_H);
+            const yBot = parentLane === side ? yP : yP - GRAPH_H;
+            d += " L " + xS + " " + yBot;
+            if (parentLane !== side) d += " L " + xP + " " + yP;
+          }
+          graphLinks.push({ d, color, key: r.hash + "-" + ph });
+        });
+      });
+
+      const graphSvg = commits.length > 0
+        ? jsx("svg", {
+            className: "dshGitGraphSvg",
+            width: maxCols * GRAPH_W,
+            height: commits.length * GRAPH_H,
+            style: { pointerEvents: "none" },
+            children: [
+              ...graphLinks.map((l) => jsx("path", { key: l.key, d: l.d, stroke: l.color, strokeWidth: 2, fill: "none", strokeLinecap: "round", strokeLinejoin: "round" })),
+              ...commits.map((r, i) => {
+                const c = lanes[i];
+                const isHead = /\bHEAD\b/.test(r.refs || "");
+                return jsx("circle", {
+                  key: "node" + r.hash,
+                  cx: gx(c),
+                  cy: gy(i),
+                  r: isHead ? 4.5 : 3.5,
+                  fill: isHead ? "var(--dsw-alias-bg-layer-1)" : colColor(c),
+                  stroke: colColor(c),
+                  strokeWidth: isHead ? 2 : 1.5,
+                });
+              }),
+            ],
+          })
+        : null;
+
+      const graphRows = commits.map((row, i) => {
         const selected = selectedCommit === row.hash;
         return jsx("div", {
           key: row.hash + i,
           className: "dshGitGraphRow" + (selected ? " dshGitGraphRowSelected" : ""),
+          style: { paddingLeft: maxCols * GRAPH_W + 6 },
           onClick: () => showCommit(row.hash),
           children: [
-            jsx("span", { className: "dshGitGraphGlyph", children: row.graph }),
             row.refs ? jsx("span", { className: "dshGitGraphRefs", children: row.refs }) : null,
             jsx("span", { className: "dshGitGraphSubject", children: row.subject }),
-            jsx("span", { className: "dshGitGraphMeta", children: row.hash + (row.author ? " · " + row.author : "") + (row.date ? " · " + row.date : "") }),
+            jsx("span", { className: "dshGitGraphMeta", children: row.hash.slice(0, 7) + (row.author ? " · " + row.author : "") + (row.date ? " · " + row.date : "") }),
           ],
         });
       });
@@ -600,7 +726,7 @@ window.__ModuleLoader__.load({
                   })),
                 }),
               ] }) : null,
-            jsxs("div", { className: "dshGitSection", children: [
+            jsxs("div", { className: "dshGitSection dshGitSectionFlex", children: [
               jsx("h4", { children: "已暂存（" + staged.length + "）" }),
               staged.length === 0
                 ? jsx("div", { className: "dshGitEmpty", children: "无已暂存文件" })
@@ -640,7 +766,10 @@ window.__ModuleLoader__.load({
               jsx("h4", { children: "历史（点击提交查看详情）" }),
               graph.length === 0
                 ? jsx("div", { className: "dshGitEmpty", children: "暂无提交" })
-                : jsx("div", { className: "dshGitGraph", children: graphRows }),
+                : jsx("div", { className: "dshGitGraph", children: jsxs("div", { className: "dshGitGraphInner", children: [
+                    graphSvg,
+                    ...graphRows,
+                  ] }) }),
             ] }),
             jsxs("div", { className: "dshGitSection", style: { flex: "0 0 auto" }, children: [
               jsx("h4", { children: "提交" }),

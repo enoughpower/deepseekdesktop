@@ -27,9 +27,9 @@ desktop/
 ├── git.patch.yml           # 注册内置 Git 插件
 ├── billing.patch.yml       # 注册内置余额/消费插件
 ├── updater.patch.yml       # 注册内置版本号/检查更新插件
-├── image-input.patch.yml   # 注册内置图片转文字插件
 ├── skill-manager.patch.yml # 注册内置技能管理器插件
 ├── mcp-settings.patch.yml  # 注册内置 MCP 服务管理插件
+├── vision.patch.yml        # 注册识图插件 dsh-vision（接管 llm-deepseek）
 ├── prune.sh                # node_modules 精简脚本
 ├── build.sh                # 一键构建
 ├── plugins/                # 内置插件源码（构建时拷入后端 node_modules）
@@ -127,12 +127,14 @@ $HOME/.nvm/versions/node/v22.19.0/bin/npm install --omit=dev --no-audit --no-fun
 - **状态分区**：暂存区 / 未暂存区 / 未跟踪文件分栏列出；**checkbox 即暂存开关**——
   勾选未暂存文件即暂存，取消已暂存文件的勾选即取消暂存；「未暂存」标题旁有全选框，
   一键全部暂存 / 全部取消暂存。
-- **丢弃改动**：未暂存文件行的「丢弃」按钮恢复工作区改动（未跟踪文件不提供）。
+- **丢弃改动**：每行右侧 `⋯` 菜单 →「丢弃改动」恢复工作区改动（未跟踪文件不提供）；
+  「移除文件」从工作区删除该文件（含未跟踪文件，二次确认后不可恢复）。
 - **提交**：**只提交已暂存（勾选）的文件**（`提交已暂存 (N)`），未暂存的不受影响；
   支持 amend 上次提交；消息输入区 + 输出回显。
 - **分支管理**：新建（可切过去）、切换、重命名、删除（二次确认）、合并（含冲突提示）。
 - **远程操作**：推送（-u 设上游）、拉取（--ff-only）、Fetch --prune。
-- **历史**：图形化提交图（分支线 + 节点 + 引用标签），点击提交看完整 diff；支持
+- **历史**：图形化提交图（Git Graph 风格：主线靠左、分支向右分叉后竖直向下，
+  每条分支按列着色；HEAD 为空心圆，其余为实心圆点），点击提交看完整 diff；支持
   文件级历史（`git log -- <file>`）与 blame。
 - **文件对比**：点击文件查看「工作区 vs HEAD」内容对照（含文件历史）。
 - **面板布局**：第 2 列上方为提交历史（占满剩余高度），最下方为提交表单。
@@ -145,22 +147,31 @@ $HOME/.nvm/versions/node/v22.19.0/bin/npm install --omit=dev --no-audit --no-fun
 | `plugins/dsh-client-ui-git/` | 浏览器半部：侧边栏 Git 入口 + 全屏面板 UI |
 | `git.patch.yml` | 注册这两个插件（launcher 经 `--patch` 传入） |
 
-## 图片转文字输入
+## 识图（dsh-vision）
 
-内置了第三方插件 **dsh-plugin-image-input**（npm 包，见其
-[GitHub 仓库](https://github.com/Elohia/dsh-plugin-image-input)），给纯文本 LLM
-（DeepSeek 等无视觉模型）提供图片输入接管：
+内置第三方插件 **dsh-vision**（见其
+[GitHub 仓库](https://github.com/oil-oil/dsh-vision)），给纯文本模型（DeepSeek 等）
+提供**近原生图片理解**：
 
-- 在输入框里照常**粘贴 / 拖拽图片**，按 Enter 或点发送时，插件会自动把图片转成
-  结构化文字描述一起发出（当前模型**支持**图片时完全放行，走原生通道）。
-- 设置页新增「**图片转文字**」分节：填 `baseUrl` / `model` / `apiKey` / `maxTokens`
-  （任意 OpenAI 兼容视觉端点，如 qwen-vl / gpt-4o / glm-4v），保存即生效，
-  配置存于 `~/.config/mm-vision/config.json`。
+- **自动桥接**：主模型支持图片时原图直发；主模型是纯文本时，自动让配置的视觉模型
+  观察原始图片，把观察结果注入上下文，再由 DeepSeek 给出最终回答——多张图一起分析，
+  无需手动点按钮转文字。
+- **设置**：设置 → 插件 → 插件配置 → **「视觉识别」**卡片，选择
+  ZenMux / 阿里云百炼（Model Studio）/ TokenDance / OpenRouter，填 API Key 即用；
+  API Key 走官方凭证服务（浏览器只读、不回显）。
+- **回退链**：没有可用的云视觉服务时，自动回退 macOS 自带 Vision OCR 或 Tesseract。
+- **等价配置**：非密钥字段也可写在 `~/.dsh/settings.yaml` 的 `llm-deepseek` 段
+  （`visionBackend` / `visionBackendModel` / `visionBackendBaseURL` / `maxImages`）；
+  密钥用环境变量（如 `ZENMUX_API_KEY`）。
+
+> 说明：dsh-vision 会接管官方 `llm-deepseek` 适配器（保留模型目录、设置与凭证），
+> 已在 rc.7 上做兼容修复（keyed 插槽补 `key`）。原先的「图片转文字」手动插件
+> （image-input）已删除，图片识图统一由 dsh-vision 接管。
 
 | 文件 | 作用 |
 |---|---|
-| `plugins/dsh-plugin-image-input/` | 插件源码（宿主半：`/plugins/mmv/*` 路由；浏览器半：Enter/发送自动转文字接管 + 设置表单） |
-| `image-input.patch.yml` | 注册该插件（launcher 经 `--patch` 传入） |
+| `plugins/@oil-oil/dsh-vision/` | 插件源码（宿主半：视觉桥接适配器；浏览器半：「视觉识别」配置卡片） |
+| `vision.patch.yml` | 注册该插件并接管 llm-deepseek（launcher 经 `--patch` 传入） |
 
 ## 技能管理器
 

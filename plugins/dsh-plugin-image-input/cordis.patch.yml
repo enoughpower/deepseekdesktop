@@ -1,5 +1,0 @@
-# dsh-plugin-image-input — 图片转文字输入插件
-# host 半：设置页注册视觉 API 配置 + 本地分析路由；client 半：输入框按钮（blob 图片接管）。
-- insert:
-    - id: image-input
-      name: dsh-plugin-image-input
