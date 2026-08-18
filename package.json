@@ -5,6 +5,6 @@
   "type": "module",
   "description": "macOS desktop wrapper for DeepSeek Harness",
   "dependencies": {
-    "@deepseek-ai/dsh": "0.1.0-rc.6"
+    "@deepseek-ai/dsh": "0.1.0-rc.7"
   }
 }

@@ -96,6 +96,26 @@ KEEP_EXTRA_PROVIDERS=1 ./build.sh
 | `plugins/dsh-client-ui-updater/` | 浏览器半部：右上角版本徽标 + 设置里的「检查更新」区块 |
 | `updater.patch.yml` | 注册这两个插件（launcher 启动时经 `--patch` 传入） |
 
+### 如何真正升级 Harness
+
+运行时「**检查更新**」只替换**当前应用包内**那份 `node_modules`，**不会写回桌面源码依赖**。
+因此**只要重新运行 `./build.sh`，版本就会回到源码锁定的版本**（`build.sh` 每次都从
+`desktop/node_modules` 重新拷贝）。
+
+要**永久升级**（让 `./build.sh` 稳定产出新版本）：
+
+```bash
+cd desktop
+# 1) 把 package.json 里 @deepseek-ai/dsh 的版本号改成目标版本（如 0.1.0-rc.7）
+# 2) 用可用的 node/npm 重装依赖（系统 node 可能因 icu4c 损坏，用 nvm 的 node）
+$HOME/.nvm/versions/node/v22.19.0/bin/npm install --omit=dev --no-audit --no-fund
+# 3) 重建
+./build.sh
+```
+
+`./build.sh` 产出应用包的 `@deepseek-ai/dsh` 版本 = `desktop/node_modules` 里的版本，
+所以以 `package.json` 声明的版本为准。
+
 ## 图片转文字输入
 
 内置了第三方插件 **dsh-plugin-image-input**（npm 包，见其
