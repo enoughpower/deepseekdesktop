@@ -83,6 +83,14 @@ if [ -d "$ROOT/plugins/@oil-oil/dsh-vision" ]; then
   mkdir -p "$BACKEND/node_modules/@oil-oil"
   cp -a "$ROOT/plugins/@oil-oil/dsh-vision/." "$BACKEND/node_modules/@oil-oil/dsh-vision/"
 fi
+# Scoped third-party plugin (@frostgao/*): @frostgao/dsh-usage-cost lands at
+# node_modules/@frostgao/<name>. The profile reaches it through a symlink at
+# $DSH_HOME/profiles/node_modules/@frostgao/dsh-usage-cost (created at install
+# time, same convention as the other desktop overlay plugins).
+if [ -d "$ROOT/plugins/@frostgao/dsh-usage-cost" ]; then
+  mkdir -p "$BACKEND/node_modules/@frostgao"
+  cp -a "$ROOT/plugins/@frostgao/dsh-usage-cost/." "$BACKEND/node_modules/@frostgao/dsh-usage-cost/"
+fi
 
 # --- 1c. Settings-panel nav icons (idempotent patch) ------------------------
 # ui-settings-general maps nav glyphs by section id; teach it the "git" and

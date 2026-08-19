@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { credentialRef } from "@deepseek-ai/dsh-credentials";
 import { resolveDshHome } from "@deepseek-ai/dsh-home-paths";
@@ -15,6 +16,10 @@ const API_KEY_REF = "DEEPSEEK_API_KEY";
 /** The platform console's localStorage `userToken`, used for the private usage API. */
 const PLATFORM_TOKEN_REF = "DEEPSEEK_PLATFORM_TOKEN";
 const RECHARGE_URL = "https://platform.deepseek.com/top_up";
+
+/** OpenCode Go usage query (official vendor bundle endpoint, Bearer auth). */
+const OPENCODE_GO_BASE_URL = "https://opencode.ai/zen/go/v1/usage";
+const OPENCODE_GO_KEY_REF = "OPENCODE_GO_API_KEY";
 const BALANCE_CACHE_MS = 30_000;
 const RECORDER_INTERVAL_MS = 60_000;
 const TIMEOUT_MS = 15_000;
@@ -299,6 +304,77 @@ async function fetchPlatformUsage(ctx, granularity) {
   return ok({ granularity, days, totalCost, todayCost: today?.cost ?? 0, monthCost });
 }
 
+// ── OpenCode Go usage (official vendor bundle endpoint, Bearer auth) ──────
+/**
+ * Resolve the OpenCode Go API key, most-trusted first:
+ *   1. DSH credentials seam / env reference OPENCODE_GO_API_KEY.
+ *   2. OpenCode's own auth.json (opencode-go, fallback opencode, type "api").
+ */
+async function resolveOpencodeKey(ctx) {
+  const key = await resolveCredential(ctx, OPENCODE_GO_KEY_REF);
+  if (key !== undefined) return key;
+  try {
+    const authPath = join(homedir(), ".local", "share", "opencode", "auth.json");
+    const raw = JSON.parse(readFileSync(authPath, "utf8"));
+    const entry = raw["opencode-go"] ?? raw["opencode"];
+    if (entry && entry.type === "api" && typeof entry.key === "string" && entry.key.length > 0) {
+      return entry.key;
+    }
+  } catch {
+    /* auth.json absent or malformed — fall through */
+  }
+  return undefined;
+}
+
+function pickUsageWindow(w) {
+  if (!w || typeof w !== "object") return null;
+  const percent = typeof w.percent === "number" ? w.percent : toFinite(w.percent ?? NaN);
+  return {
+    status: typeof w.status === "string" ? w.status : null,
+    percent: Number.isFinite(percent) ? percent : null,
+    resetsAt: typeof w.resetsAt === "string" ? w.resetsAt : null,
+  };
+}
+
+async function fetchOpencodeUsage(ctx) {
+  const apiKey = await resolveOpencodeKey(ctx);
+  if (apiKey === undefined) {
+    return ok({ configured: false, reason: "no-api-key", error: null, usage: null });
+  }
+  let response;
+  try {
+    response = await fetch(OPENCODE_GO_BASE_URL, {
+      headers: { authorization: "Bearer " + apiKey, accept: "application/json" },
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+  } catch (error) {
+    return ok({ configured: true, reason: null, error: "network", usage: null, message: error?.message ?? String(error) });
+  }
+  if (response.status === 401) {
+    return ok({ configured: true, reason: null, error: "unauthorized", usage: null });
+  }
+  if (!response.ok) {
+    return ok({ configured: true, reason: null, error: "http-" + response.status, usage: null });
+  }
+  let body;
+  try {
+    body = await response.json();
+  } catch {
+    return ok({ configured: true, reason: null, error: "bad-json", usage: null });
+  }
+  const usage = body && typeof body === "object" && body.usage ? body.usage : body;
+  return ok({
+    configured: true,
+    reason: null,
+    error: null,
+    usage: {
+      rolling: pickUsageWindow(usage?.rolling),
+      weekly: pickUsageWindow(usage?.weekly),
+      monthly: pickUsageWindow(usage?.monthly),
+    },
+  });
+}
+
 const handlers = {
   async balance(payload, ctx) {
     return await fetchBalance(ctx);
@@ -312,6 +388,10 @@ const handlers = {
   },
   async prices() {
     return ok(PRICES);
+  },
+
+  async opencodeUsage(payload, ctx) {
+    return await fetchOpencodeUsage(ctx);
   },
 
   async platformTokenStatus(payload, ctx) {

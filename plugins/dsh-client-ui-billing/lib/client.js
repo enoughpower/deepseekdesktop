@@ -53,6 +53,16 @@ window.__ModuleLoader__.load({
       ".dshBillSection h4{margin:0;font-size:12px;font-weight:600;color:var(--dsw-alias-label-secondary)}",
       ".dshBillInput{flex:1;min-width:200px;box-sizing:border-box;height:32px;padding:0 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font-family:inherit;font-size:13px}",
       ".dshBillInput:focus{outline:none;border-color:var(--dsw-alias-state-business-primary)}",
+      ".dshBillOgRow{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}",
+      ".dshBillOgCard{display:flex;flex-direction:column;gap:8px;padding:14px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-1)}",
+      ".dshBillOgCardHead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}",
+      ".dshBillOgName{font-size:12px;font-weight:600;color:var(--dsw-alias-label-secondary)}",
+      ".dshBillOgLimit{font-size:11px;color:var(--dsw-alias-label-tertiary)}",
+      ".dshBillOgBar{height:8px;border-radius:4px;background:var(--dsw-alias-bg-layer-2);overflow:hidden}",
+      ".dshBillOgBarFill{height:100%;background:var(--dsw-alias-state-business-primary);transition:width .2s ease}",
+      ".dshBillOgBarFill.warn{background:var(--dsw-alias-state-warn-primary)}",
+      ".dshBillOgBarFill.danger{background:var(--dsw-alias-state-error-primary)}",
+      ".dshBillOgMeta{display:flex;justify-content:space-between;font-size:11px;color:var(--dsw-alias-label-tertiary);gap:8px;font-variant-numeric:tabular-nums}",
     ].join("\n");
     const cssTagId = "@deepseek-ai/dsh-client-ui-billing/styles.css";
     if (typeof document !== "undefined" && document.querySelector('style[data-plugin-css="' + cssTagId + '"]') === null) {
@@ -225,9 +235,62 @@ window.__ModuleLoader__.load({
       });
     }
 
+    function fmtResetTime(resetsAt) {
+      if (!resetsAt) return "--";
+      const d = new Date(resetsAt);
+      if (Number.isNaN(d.getTime())) return resetsAt;
+      return d.toLocaleString();
+    }
+
+    function ogBarClass(percent) {
+      if (percent >= 80) return "dshBillOgBarFill danger";
+      if (percent >= 50) return "dshBillOgBarFill warn";
+      return "dshBillOgBarFill";
+    }
+
+    function OpencodeGoCards({ data }) {
+      const blocks = [
+        ["5 小时滚动", "$12", data.rolling],
+        ["每周", "$30", data.weekly],
+        ["每月", "$60", data.monthly],
+      ];
+      return jsx("div", {
+        className: "dshBillOgRow",
+        children: blocks.map(([name, limit, w]) => {
+          const percent = w && typeof w.percent === "number" ? w.percent : null;
+          const pct = percent === null ? 0 : Math.max(0, Math.min(100, percent));
+          return jsxs("div", {
+            key: name,
+            className: "dshBillOgCard",
+            children: [
+              jsxs("div", {
+                className: "dshBillOgCardHead",
+                children: [
+                  jsx("span", { className: "dshBillOgName", children: name }),
+                  jsx("span", { className: "dshBillOgLimit", children: "限额 " + limit }),
+                ],
+              }),
+              jsx("div", {
+                className: "dshBillOgBar",
+                children: percent !== null ? jsx("div", { className: ogBarClass(percent), style: { width: pct + "%" } }) : null,
+              }),
+              jsxs("div", {
+                className: "dshBillOgMeta",
+                children: [
+                  jsx("span", { children: percent === null ? "--" : percent + "%" }),
+                  jsx("span", { children: "重置 " + fmtResetTime(w && w.resetsAt) }),
+                ],
+              }),
+            ],
+          });
+        }),
+      });
+    }
+
     function BillingSection() {
       const [balance, setBalance] = react.useState(null);
       const [usage, setUsage] = react.useState(null);
+      const [opencodeUsage, setOpencodeUsage] = react.useState(null);
       const [loading, setLoading] = react.useState(false);
       const [showCredentials, setShowCredentials] = react.useState(false);
       const [tokenStatus, setTokenStatus] = react.useState(null);
@@ -236,12 +299,14 @@ window.__ModuleLoader__.load({
 
       const refresh = react.useCallback(async () => {
         setLoading(true);
-        const [b, u] = await Promise.all([
+        const [b, u, og] = await Promise.all([
           billingCall("balance"),
           billingCall("usage", { granularity: "day" }),
+          billingCall("opencodeUsage"),
         ]);
         setBalance(b.ok ? b.value : { error: b.error?.message || "无法获取余额" });
         setUsage(u.ok ? u.value : { error: u.error?.message || "无法获取用量" });
+        setOpencodeUsage(og.ok ? og.value : { error: og.error?.message || "无法获取 OpenCode Go 用量" });
         setLoading(false);
       }, []);
 
@@ -372,6 +437,45 @@ window.__ModuleLoader__.load({
                 !usage?.error ? jsx("div", { className: "dshBillHint", children: "数据来自 DeepSeek 开放平台（platform.deepseek.com）" }) : null,
               ],
             }),
+            // ── OpenCode Go subscription usage ──
+            jsxs("div", {
+              className: "dshBillSection",
+              children: [
+                jsxs("div", {
+                  className: "dshBillMeta",
+                  children: [
+                    jsx("h4", { children: "OpenCode Go 用量" }),
+                    loading ? jsx("span", { className: "dshBillHint", children: "加载中…" }) : null,
+                  ],
+                }),
+                (() => {
+                  const v = opencodeUsage;
+                  if (!v) return jsx("div", { className: "dshBillEmpty", children: "加载中…" });
+                  if (v.configured === false) {
+                    const msg = v.reason === "no-api-key"
+                      ? "未找到 OpenCode Go API Key（OPENCODE_GO_API_KEY / ~/.local/share/opencode/auth.json）。"
+                      : "OpenCode Go 未配置。";
+                    return jsx("div", { className: "dshBillEmpty", children: msg });
+                  }
+                  if (v.error) {
+                    const msg = v.error === "unauthorized"
+                      ? "OpenCode Go API Key 无效或已过期（401）。"
+                      : v.error === "network"
+                        ? "网络请求失败，请稍后重试。"
+                        : v.error === "bad-json"
+                          ? "OpenCode Go 用量接口响应解析失败。"
+                          : v.error.indexOf("http-") === 0
+                            ? "OpenCode Go 用量接口返回 HTTP " + v.error.slice(5) + "。"
+                            : v.error;
+                    return jsx("div", { className: "dshBillErr", children: msg });
+                  }
+                  return jsx(OpencodeGoCards, { data: (v.usage || {}) });
+                })(),
+                !opencodeUsage?.error
+                  ? jsx("div", { className: "dshBillHint", children: "数据来自 OpenCode Go（opencode.ai/zen/go/v1/usage），按套餐窗口比例显示。" })
+                  : null,
+              ],
+            }),
           ],
         }),
       });
@@ -387,7 +491,7 @@ window.__ModuleLoader__.load({
             name: "settings.section",
             id: "billing",
             order: 20,
-            label: () => "余额与消费",
+            label: () => "余额",
           },
           BillingSection,
         ),
