@@ -30,6 +30,7 @@ desktop/
 ├── skill-manager.patch.yml # 注册内置技能管理器插件
 ├── mcp-settings.patch.yml  # 注册内置 MCP 服务管理插件
 ├── vision.patch.yml        # 注册识图插件 dsh-vision（接管 llm-deepseek）
+├── web-shell.patch.yml     # 注册内置 Web 终端插件 dsh-web-shell
 ├── prune.sh                # node_modules 精简脚本
 ├── build.sh                # 一键构建
 ├── plugins/                # 内置插件源码（构建时拷入后端 node_modules）
@@ -200,6 +201,51 @@ Streamable HTTP），点「保存」即热更新生效（无需重启进程）�
 | `plugins/@opendsh/dsh-plugin-setting-mcp/` | 插件源码（宿主半：typert `ctx.mcp` 服务；浏览器半：设置页 MCP 服务管理） |
 | `mcp-settings.patch.yml` | 注册该插件（launcher 经 `--patch` 传入） |
 
+
+## Web 终端（dsh-web-shell）
+
+内置了第三方插件 **dsh-web-shell**（npm 包），在 Web GUI 右侧停靠一个可折叠的
+**交互式真终端**：浏览器端用 xterm.js 渲染，宿主侧通过 `/api/shell` WebSocket 把
+每个连接桥接到一个本机 PTY（bash / zsh）。
+
+功能：
+
+- **右侧停靠**：打开后主对话栏自动让位，不再遮挡会话内容（需要较新的
+  `dsh-client-ui-layout`，rc.7 已自带）。
+- **可调宽度**：拖动 shell 左边缘即可调整宽度（360–960px），按 profile 记忆。
+- **折叠 / 关闭分离**：折叠只隐藏面板但保持 PTY 会话存活；关闭才真正终止会话。
+- **bash / zsh 切换**：切换时关闭旧 PTY 并启动新 shell。
+- **对 agent 不可见**：终端操作不进入对话上下文，纯人工终端。
+
+用窗口右侧的 **❯_** 按钮打开 shell。该插件是纯 ESM、无原生二进制，rc.7 已自带
+其全部 peer 依赖（`ws`、`@deepseek-ai/dsh-subprocess` / `dsh-host-webserver` /
+`dsh-client-ui-layout` 等），xterm.js 已内联进浏览器半部，无需额外安装。
+
+| 文件 | 作用 |
+|---|---|
+| `plugins/dsh-web-shell/` | 插件源码（宿主半：`/api/shell` WebSocket→PTY 桥；浏览器半：右侧停靠 xterm.js 面板） |
+| `web-shell.patch.yml` | 注册该插件（launcher 经 `--patch` 传入） |
+
+## 余额（DeepSeek 平台 + OpenCode Go 用量）
+
+内置的余额插件在「设置 → 余额」里展示三类信息：
+
+- **DeepSeek 账户余额**：总余额 / 充值余额 / 赠送余额（走 `api.deepseek.com` 的
+  Get User Balance 接口，凭 `DEEPSEEK_API_KEY`）；含「在线充值」入口（跳转
+  `platform.deepseek.com/top_up`）。
+- **消费统计**：最近 7 天每日消费折线图 + 今日 / 本月消费汇总，数据来自
+  `platform.deepseek.com` 的私有用量接口（凭 `DEEPSEEK_PLATFORM_TOKEN`，即
+  platform 控制台 localStorage 的 `userToken`）。
+- **OpenCode Go 用量**：5 小时滚动 / 每周 / 每月 三个套餐窗口的已用百分比、
+  限额与重置时间，进度条按阈值变色（≥50% 橙、≥80% 红）。数据来自
+  `opencode.ai/zen/go/v1/usage`，凭 `OPENCODE_GO_API_KEY`（优先取 DSH 凭据，
+  其次回退 `~/.local/share/opencode/auth.json` 的 `opencode-go` 条目）。
+
+| 文件 | 作用 |
+|---|---|
+| `plugins/dsh-billing/` | 宿主半部：`/billing` JSON API（balance / usage / opencodeUsage / prices 等） |
+| `plugins/dsh-client-ui-billing/` | 浏览器半部：设置「余额」区块（余额卡片 + 7 天折线图 + OpenCode Go 用量卡） |
+| `billing.patch.yml` | 注册这两个插件（launcher 经 `--patch` 传入） |
 
 launcher 还会把后端目录（含内置 `node` 二进制）放在 `PATH` 最前，确保插件跑视觉
 子进程时用的是应用自带的 Node，而非可能损坏的系统 Node。

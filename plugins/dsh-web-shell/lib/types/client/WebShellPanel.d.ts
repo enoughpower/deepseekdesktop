@@ -1,0 +1,31 @@
+/**
+ * Collapsible right-docked shell panel with a live xterm.js terminal and
+ * browser-style multiple shell tabs.
+ *
+ * Visibility has two controls:
+ * - collapse hides the panel but keeps every tab's WebSocket/PTY session
+ *   mounted, so reopening restores the same shell processes;
+ * - close disposes every tab, closes each WebSocket, and the host kills the
+ *   PTYs. Reopening after close starts a fresh shell.
+ *
+ * The panel width is owned by ui-layout's right-dock reservation
+ * (`ctx.layout.setShellWidth`): the frame reserves the same width through its
+ * `shell.overlay` owner share, so the center conversation column moves left
+ * instead of being covered.
+ */
+import '@xterm/xterm/css/xterm.css';
+import type { SettingsScope } from '@deepseek-ai/dsh-client-runtime/client';
+import type { WebShellSettings } from '../settings.ts';
+/** Injected by the plugin apply face from `ctx.layout`. */
+export interface WebShellPanelInjected {
+    closeShell(): void;
+    setShellWidth(px: number): void;
+    settings: SettingsScope<WebShellSettings>;
+}
+interface WebShellPanelProps extends WebShellPanelInjected {
+    /** Right-dock width reserved by ui-layout (0 while collapsed). */
+    shellWidth?: number;
+}
+export declare function WebShellPanel({ shellWidth, closeShell, setShellWidth, settings, }: WebShellPanelProps): import("react").JSX.Element;
+export {};
+//# sourceMappingURL=WebShellPanel.d.ts.map

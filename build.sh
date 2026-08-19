@@ -67,8 +67,10 @@ for p in dsh-git dsh-client-ui-git dsh-billing dsh-client-ui-billing dsh-updater
   cp -a "$ROOT/plugins/$p/." "$BACKEND/node_modules/@deepseek-ai/$p/"
 done
 # Unscoped third-party plugins: land at node_modules/<name> (not under @deepseek-ai).
+# dsh-web-shell is the built-in web shell (right-docked xterm.js PTY); it ships
+# as a self-contained plugin bundle staged under plugins/.
 mkdir -p "$BACKEND/node_modules"
-for p in dsh-skill-manager; do
+for p in dsh-skill-manager dsh-web-shell; do
   if [ -d "$ROOT/plugins/$p" ]; then
     cp -a "$ROOT/plugins/$p/." "$BACKEND/node_modules/$p/"
   fi
@@ -153,6 +155,7 @@ cp "$ROOT/updater.patch.yml" "$BACKEND/updater.patch.yml"
 cp "$ROOT/skill-manager.patch.yml" "$BACKEND/skill-manager.patch.yml"
 cp "$ROOT/mcp-settings.patch.yml" "$BACKEND/mcp-settings.patch.yml"
 cp "$ROOT/vision.patch.yml" "$BACKEND/vision.patch.yml"
+cp "$ROOT/web-shell.patch.yml" "$BACKEND/web-shell.patch.yml"
 
 # --- 4. compile the native WKWebView shell ---------------------------------
 echo "==> compiling Swift shell"
