@@ -329,6 +329,12 @@ const VISION_PROVIDERS = {
 		baseURL: "https://openrouter.ai/api/v1",
 		model: "qwen/qwen3.7-plus",
 		credentialRefs: ["OPENROUTER_API_KEY"]
+	},
+	"opencode-go": {
+		displayName: "OpenCode（Zen Go）",
+		baseURL: "https://opencode.ai/zen/go/v1",
+		model: "qwen3.6-plus",
+		credentialRefs: ["OPENCODE_GO_API_KEY"]
 	}
 };
 function isVisionProviderName(value) {
@@ -352,13 +358,18 @@ const PROVIDER_ENVIRONMENT = {
 	openrouter: {
 		baseEnv: "OPENROUTER_BASE_URL",
 		modelEnv: "OPENROUTER_MODEL"
+	},
+	"opencode-go": {
+		baseEnv: "OPENCODE_GO_BASE_URL",
+		modelEnv: "OPENCODE_GO_MODEL"
 	}
 };
 const DEFAULT_ORDER = [
 	"zenmux",
 	"bailian",
 	"tokendance",
-	"openrouter"
+	"openrouter",
+	"opencode-go"
 ];
 function parseEnv(text) {
 	const values = /* @__PURE__ */ new Map();

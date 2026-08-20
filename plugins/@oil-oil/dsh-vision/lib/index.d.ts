@@ -30,6 +30,12 @@ declare const VISION_PROVIDERS: {
     readonly model: "qwen/qwen3.7-plus";
     readonly credentialRefs: readonly ["OPENROUTER_API_KEY"];
   };
+  readonly "opencode-go": {
+    readonly displayName: "OpenCode（Zen Go）";
+    readonly baseURL: "https://opencode.ai/zen/go/v1";
+    readonly model: "qwen3.6-plus";
+    readonly credentialRefs: readonly ["OPENCODE_GO_API_KEY"];
+  };
 };
 type VisionProviderName = keyof typeof VISION_PROVIDERS;
 //#endregion

@@ -29,6 +29,10 @@ const PROVIDER_ENVIRONMENT = {
     baseEnv: "OPENROUTER_BASE_URL",
     modelEnv: "OPENROUTER_MODEL",
   },
+  "opencode-go": {
+    baseEnv: "OPENCODE_GO_BASE_URL",
+    modelEnv: "OPENCODE_GO_MODEL",
+  },
 } satisfies Record<VisionProviderName, ProviderEnvironment>
 
 export type SeeProviderName = VisionProviderName
@@ -45,6 +49,7 @@ const DEFAULT_ORDER: readonly SeeProviderName[] = [
   "bailian",
   "tokendance",
   "openrouter",
+  "opencode-go",
 ]
 
 function parseEnv(text: string): Map<string, string> {

@@ -33,6 +33,12 @@ window.__ModuleLoader__.load({
 				baseURL: "https://openrouter.ai/api/v1",
 				model: "qwen/qwen3.7-plus",
 				credentialRefs: ["OPENROUTER_API_KEY"]
+			},
+			"opencode-go": {
+				displayName: "OpenCode（Zen Go）",
+				baseURL: "https://opencode.ai/zen/go/v1",
+				model: "qwen3.6-plus",
+				credentialRefs: ["OPENCODE_GO_API_KEY"]
 			}
 		};
 		function isVisionProviderName(value) {
