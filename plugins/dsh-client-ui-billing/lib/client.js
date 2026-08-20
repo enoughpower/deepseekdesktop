@@ -490,7 +490,7 @@ window.__ModuleLoader__.load({
           {
             name: "settings.section",
             id: "billing",
-            order: 20,
+            order: 35,
             label: () => "余额",
           },
           BillingSection,

@@ -5314,7 +5314,7 @@ body[data-ds-dark-theme] {
 			slots.inject("settings.section", () => slots.register({
 				name: "settings.section",
 				id: "usage",
-				order: 200,
+				order: 40,
 				label: "用量",
 				inject: () => ({
 					usageCost,

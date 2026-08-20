@@ -27,7 +27,7 @@ desktop/
 ├── git.patch.yml           # 注册内置 Git 插件
 ├── billing.patch.yml       # 注册内置余额/消费插件
 ├── updater.patch.yml       # 注册内置版本号/检查更新插件
-├── skill-manager.patch.yml # 注册内置技能管理器插件
+├── skills-hub.patch.yml   # 注册内置全局技能库插件 dsh-skills
 ├── mcp-settings.patch.yml  # 注册内置 MCP 服务管理插件
 ├── vision.patch.yml        # 注册识图插件 dsh-vision（接管 llm-deepseek）
 ├── web-shell.patch.yml     # 注册内置 Web 终端插件 dsh-web-shell
@@ -178,16 +178,28 @@ $HOME/.nvm/versions/node/v22.19.0/bin/npm install --omit=dev --no-audit --no-fun
 | `plugins/@oil-oil/dsh-vision/` | 插件源码（宿主半：视觉桥接适配器；浏览器半：「视觉识别」配置卡片） |
 | `vision.patch.yml` | 注册该插件并接管 llm-deepseek（launcher 经 `--patch` 传入） |
 
-## 技能管理器
+## 全局技能库（dsh-skills）
 
-内置了第三方插件 **dsh-skill-manager**（npm 包），在设置页加一个「**技能**」入口，
-列出已安装技能（名称 / 描述 / 模型-用户调用类型 / 来源根目录）并支持搜索。只读浏览
-本地技能目录（`$DSH_HOME/skills`、`~/.agents/skills`）。
+内置第三方插件 **dsh-skills**（[CocoSgt/dsh-skills](https://github.com/CocoSgt/dsh-skills)，
+取代原先只读的 `dsh-skill-manager`）。把散落的技能汇成全局库：Claude Code 的
+`~/.claude/skills`、项目目录、`.skill` 包等统一入库到 `~/.dsh/skills`（官方
+skill-filesystem 默认扫描根，watcher 实时），入库即出现在输入框的「/」斜杠菜单；
+设置页侧栏有「技能」导航页。
+
+功能：
+
+- **两种入库身份**：引用（符号链接，编辑即编辑来源）/ 副本（整树拷贝，独立演化）。
+- **全局技能页签**：＋ 新建技能、上传 `.skill`、可视化筛选；每张卡带身份徽标、
+  资源文件数、非默认调用策略；「编辑 SKILL.md」内联编辑、导出 `.skill` 整树打包、
+  打开目录、删除（引用只删链接，两步确认）。
+- **发现页签**：扫描目录 chips 就地管理，结果可「引用 / 复制」，支持「全部引用」批量。
+- 全部文案经官方 locale 服务中英渲染；同系列搭配 `dsh-attachments` / `dsh-inspector`。
 
 | 文件 | 作用 |
 |---|---|
-| `plugins/dsh-skill-manager/` | 插件源码（宿主半：`/api/skill-manager/list`；浏览器半：设置页技能列表） |
-| `skill-manager.patch.yml` | 注册该插件（launcher 经 `--patch` 传入） |
+| `plugins/dsh-skills/` | 插件源码（宿主半：`skillHub` Typert 网关：状态 / import（引用|复制）/ edit / export；浏览器半：设置页技能中枢） |
+| `skills-hub.patch.yml` | 注册该插件（launcher 经 `--patch` 传入） |
+
 
 ## MCP 服务管理
 

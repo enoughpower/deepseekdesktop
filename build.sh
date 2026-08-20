@@ -67,10 +67,11 @@ for p in dsh-git dsh-client-ui-git dsh-billing dsh-client-ui-billing dsh-updater
   cp -a "$ROOT/plugins/$p/." "$BACKEND/node_modules/@deepseek-ai/$p/"
 done
 # Unscoped third-party plugins: land at node_modules/<name> (not under @deepseek-ai).
-# dsh-web-shell is the built-in web shell (right-docked xterm.js PTY); it ships
-# as a self-contained plugin bundle staged under plugins/.
+# dsh-skills is the global skill hub (replaces the old read-only dsh-skill-manager);
+# dsh-web-shell is the built-in web shell (right-docked xterm.js PTY). Both ship as
+# self-contained plugin bundles staged under plugins/.
 mkdir -p "$BACKEND/node_modules"
-for p in dsh-skill-manager dsh-web-shell; do
+for p in dsh-skills dsh-web-shell; do
   if [ -d "$ROOT/plugins/$p" ]; then
     cp -a "$ROOT/plugins/$p/." "$BACKEND/node_modules/$p/"
   fi
@@ -126,6 +127,23 @@ if not all(f'if (id === "{i[0]}") return' in s for i in icons):
     p.write_text("\n".join(lines))
 PYEOF
 
+# --- 1d. Settings sidebar section order (idempotent patch) -------------------
+# The settings.section slot sorts sidebar rows by order. Reorder the shipped
+# default to: 通用设置/模型/插件/技能/MCP服务/余额/用量/Agent预设/检查更新.
+# The plugin-owned rows (billing/usage/updater/skills/mcp) are patched in their
+# source under plugins/; agent-presets is an official package so we patch its
+# order here (20 -> 45) so it lands right before updater (50).
+python3 - "$BACKEND/node_modules/@deepseek-ai/dsh-client-ui-agent-preset/lib/client.js" << 'PYEOF'
+import sys, pathlib
+p = pathlib.Path(sys.argv[1])
+s = p.read_text()
+old = 'id: "agent-presets",\n\t\t\t\torder: 20,'
+new = 'id: "agent-presets",\n\t\t\t\torder: 45,'
+if old in s and new not in s:
+    p.write_text(s.replace(old, new, 1))
+    print("patched agent-presets order -> 45")
+PYEOF
+
 # --- 2. bundle the Node.js runtime (strip local symbols, re-sign) ----------
 NODE_SRC="$(resolve_node)"
 echo "==> bundling node runtime from $NODE_SRC"
@@ -155,7 +173,7 @@ fi
 cp "$ROOT/git.patch.yml" "$BACKEND/git.patch.yml"
 cp "$ROOT/billing.patch.yml" "$BACKEND/billing.patch.yml"
 cp "$ROOT/updater.patch.yml" "$BACKEND/updater.patch.yml"
-cp "$ROOT/skill-manager.patch.yml" "$BACKEND/skill-manager.patch.yml"
+cp "$ROOT/skills-hub.patch.yml" "$BACKEND/skills-hub.patch.yml"
 cp "$ROOT/mcp-settings.patch.yml" "$BACKEND/mcp-settings.patch.yml"
 cp "$ROOT/vision.patch.yml" "$BACKEND/vision.patch.yml"
 cp "$ROOT/web-shell.patch.yml" "$BACKEND/web-shell.patch.yml"

@@ -201,7 +201,7 @@ window.__ModuleLoader__.load({
           {
             name: "settings.section",
             id: "updater",
-            order: 30,
+            order: 50,
             label: () => "检查更新",
           },
           UpdaterSection,

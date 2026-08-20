@@ -1,8 +1,0 @@
-# Desktop-app overlay: register the in-GUI skill manager plugin.
-#
-# `ui-skill-manager` lists every installed skill (name / description /
-# invocation type / source root) in a Settings entry, with search. Read-only
-# browser of the local skill catalog ($DSH_HOME/skills, ~/.agents/skills).
-- insert:
-    - id: ui-skill-manager
-      name: 'dsh-skill-manager'
