@@ -26,6 +26,7 @@ const SKILL_MANAGER_PATCH = join(HERE, "skill-manager.patch.yml");
 const MCP_SETTINGS_PATCH = join(HERE, "mcp-settings.patch.yml");
 const VISION_PATCH = join(HERE, "vision.patch.yml");
 const WEB_SHELL_PATCH = join(HERE, "web-shell.patch.yml");
+const THEME_BLACKGOLD_PATCH = join(HERE, "theme-blackgold.patch.yml");
 
 /** Build the backend environment. A Finder-launched app inherits a bare PATH,
  *  so we restore the standard macOS search path plus the Homebrew roots.
@@ -68,6 +69,7 @@ if (existsSync(SKILL_MANAGER_PATCH)) launcherArgs.push("--patch", SKILL_MANAGER_
 if (existsSync(MCP_SETTINGS_PATCH)) launcherArgs.push("--patch", MCP_SETTINGS_PATCH);
 if (existsSync(VISION_PATCH)) launcherArgs.push("--patch", VISION_PATCH);
 if (existsSync(WEB_SHELL_PATCH)) launcherArgs.push("--patch", WEB_SHELL_PATCH);
+if (existsSync(THEME_BLACKGOLD_PATCH)) launcherArgs.push("--patch", THEME_BLACKGOLD_PATCH);
 launcherArgs.push("--host", "127.0.0.1", "--port", "0");
 
 const child = spawn(

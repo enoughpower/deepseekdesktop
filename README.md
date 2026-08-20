@@ -31,6 +31,7 @@ desktop/
 ├── mcp-settings.patch.yml  # 注册内置 MCP 服务管理插件
 ├── vision.patch.yml        # 注册识图插件 dsh-vision（接管 llm-deepseek）
 ├── web-shell.patch.yml     # 注册内置 Web 终端插件 dsh-web-shell
+├── theme-blackgold.patch.yml # 注册黑金主题插件（@frostgao/dsh-theme-blackgold）
 ├── prune.sh                # node_modules 精简脚本
 ├── build.sh                # 一键构建
 ├── plugins/                # 内置插件源码（构建时拷入后端 node_modules）
@@ -246,6 +247,26 @@ Streamable HTTP），点「保存」即热更新生效（无需重启进程）�
 | `plugins/dsh-billing/` | 宿主半部：`/billing` JSON API（balance / usage / opencodeUsage / prices 等） |
 | `plugins/dsh-client-ui-billing/` | 浏览器半部：设置「余额」区块（余额卡片 + 7 天折线图 + OpenCode Go 用量卡） |
 | `billing.patch.yml` | 注册这两个插件（launcher 经 `--patch` 传入） |
+
+
+## 黑金主题（@frostgao/dsh-theme-blackgold）
+
+内置 `@frostgao/dsh-theme-blackgold`（与用量插件同作者的配搭主题），把 Web 界面
+重绘成**黑金配色**（黑白底 + 金色强调，浅色 / 深色两套）：
+
+- **品牌标**：鲸鱼 logo 金色描边 + 悬停微动；`HARNESS` 徽标黑底金字 + 周期性高光扫过。
+- **页面强调色**：发送键、激活的会话/轨迹/工作区标签、光标、高亮等金色化。
+- **细节**：侧栏运行点金色跑动、新会话光环淡金、ContextMeter 等。
+- 纯演示层覆盖（走 `dsh-client-ui-theme` 的 token 覆盖），尊重 `prefers-reduced-motion`。
+
+该插件是**客户端专属**（`immediately: true`，无需在设置里开开关），随插件清单在启动时
+自动加载生效。纯 ESM、无原生二进制，依赖的 `@deepseek-ai/dsh-client-ui-theme` 为 rc.7 自带。
+
+| 文件 | 作用 |
+|---|---|
+| `plugins/@frostgao/dsh-theme-blackgold/` | 插件源码（宿主半为空占位；浏览器半：黑金 token 覆盖） |
+| `theme-blackgold.patch.yml` | 注册该插件（launcher 经 `--patch` 传入） |
+
 
 launcher 还会把后端目录（含内置 `node` 二进制）放在 `PATH` 最前，确保插件跑视觉
 子进程时用的是应用自带的 Node，而非可能损坏的系统 Node。
