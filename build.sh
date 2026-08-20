@@ -2,8 +2,9 @@
 # Build the DeepSeek Harness macOS desktop app into dist/DeepSeekHarness.app.
 #
 # Usage:
-#   ./build.sh                 full multi-provider build (Pi.ai + all SDKs, default)
-#   KEEP_EXTRA_PROVIDERS=0 ./build.sh   minimal build (DeepSeek only, ~110 MB smaller)
+#   ./build.sh                 full multi-provider build (app only, default)
+#   ./build.sh --dmg           build + also package a drag-to-install DMG
+#   KEEP_EXTRA_PROVIDERS=0 ./build.sh   minimal build (DeepSeek only)
 #
 # Requires: macOS with Xcode command line tools (swiftc, codesign), node + npm.
 set -euo pipefail
@@ -13,6 +14,16 @@ set -euo pipefail
 # agree on the same setting.
 export KEEP_EXTRA_PROVIDERS="${KEEP_EXTRA_PROVIDERS:-1}"
 
+# DMG packaging is opt-in: pass --dmg (or -d) to also build a drag-to-install
+# DMG. By default we only produce the .app bundle.
+PACK_DMG=0
+for arg in "$@"; do
+  case "$arg" in
+    --dmg|-d) PACK_DMG=1 ;;
+    *) echo "unknown option: $arg" >&2; exit 2 ;;
+  esac
+done
+
 APP_NAME="DeepSeekHarness"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DIST="$ROOT/dist"
@@ -21,6 +32,7 @@ CONTENTS="$APP/Contents"
 MACOS="$CONTENTS/MacOS"
 RES="$CONTENTS/Resources"
 BACKEND="$RES/backend"
+VERSION="$(node -e 'console.log(require("./package.json").version)' 2>/dev/null || echo 0.1.0)"
 
 ARCH="$(uname -m)"   # arm64 or x86_64
 case "$ARCH" in
@@ -168,7 +180,6 @@ cp "$ROOT/updater.patch.yml" "$BACKEND/updater.patch.yml"
 cp "$ROOT/skills-hub.patch.yml" "$BACKEND/skills-hub.patch.yml"
 cp "$ROOT/mcp-settings.patch.yml" "$BACKEND/mcp-settings.patch.yml"
 cp "$ROOT/vision.patch.yml" "$BACKEND/vision.patch.yml"
-cp "$ROOT/theme-blackgold.patch.yml" "$BACKEND/theme-blackgold.patch.yml"
 
 # --- 4. compile the native WKWebView shell ---------------------------------
 echo "==> compiling Swift shell"
@@ -187,7 +198,59 @@ fi
 echo "==> code signing"
 codesign --force --deep --sign - "$APP" 2>/dev/null || true
 
+# --- 7. package a drag-to-install DMG (macOS) -------------------------
+build_dmg() {
+  echo "==> packaging DMG"
+  local STAGE="$DIST/dmg-stage"
+  local DMG_NAME="DeepSeekHarness-${VERSION}-${ARCH}.dmg"
+  local DMG_PATH="$DIST/$DMG_NAME"
+  local RWD="$DIST/dmg-rw.dmg"
+  rm -rf "$STAGE" "$RWD"
+  mkdir -p "$STAGE"
+  cp -R "$APP" "$STAGE/DeepSeekHarness.app"
+  ln -s /Applications "$STAGE/Applications"
+  # volume icon (the app icon doubles as the mounted-volume icon)
+  if [ -f "$ROOT/App/icon.icns" ]; then cp "$ROOT/App/icon.icns" "$STAGE/.VolumeIcon.icns"; fi
+  # install-window background (rendered by a small Swift helper under dmg-tools/)
+  local BG_TOOL="$ROOT/dmg-tools/make_dmg_bg"
+  if [ ! -x "$BG_TOOL" ]; then (cd "$ROOT/dmg-tools" && swiftc make_dmg_bg.swift -o make_dmg_bg >/dev/null 2>&1); fi
+  if [ -x "$BG_TOOL" ] && [ -f "$ROOT/App/icon.icns" ]; then
+    mkdir -p "$STAGE/.background"
+    "$BG_TOOL" "$ROOT/App/icon.icns" "$STAGE/.background/background.png" >/dev/null 2>&1
+  fi
+  # R/W volume first so Finder can write .DS_Store, then convert to compressed
+  if ! hdiutil create -volname "DeepSeek Harness" -srcfolder "$STAGE" -ov -format UDRW "$RWD" >/dev/null 2>&1; then
+    echo "  WARN: R/W DMG creation failed" >&2
+    rm -rf "$STAGE"
+    return 0
+  fi
+  local MOUNT="$(hdiutil attach "$RWD" | grep -oE '/Volumes/DeepSeek Harness' | head -1)"
+  if [ -n "$MOUNT" ]; then
+    SetFile -a V "$MOUNT/.background" 2>/dev/null || true
+    osascript "$ROOT/dmg-tools/layout.applescript" >/dev/null 2>&1 || true
+    hdiutil detach "$MOUNT" >/dev/null 2>&1 || true
+  fi
+  rm -rf "$STAGE"
+  if hdiutil convert "$RWD" -format UDZO -o "$DMG_PATH" >/dev/null 2>&1; then
+    rm -f "$RWD"
+    echo "==> dmg: $DMG_PATH ($(du -sh "$DMG_PATH" 2>/dev/null | cut -f1))"
+  else
+    echo "  WARN: DMG convert failed" >&2
+    rm -f "$RWD"
+    return 0
+  fi
+}
+
 echo
 echo "==> built: $APP"
 du -sh "$APP" 2>/dev/null
 echo "   backend: $(du -sh "$BACKEND" 2>/dev/null | cut -f1)"
+
+# --- 8. optional DMG output (only with --dmg) ---
+if [ "$PACK_DMG" = "1" ]; then
+  if command -v hdiutil >/dev/null 2>&1; then build_dmg;
+  else echo "  (hdiutil unavailable - skipping DMG)" >&2; fi
+else
+  echo "  (DMG skipped - pass --dmg to package one)"
+  echo "  e.g. "./build.sh --dmg""
+fi
