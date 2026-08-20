@@ -60,44 +60,30 @@ cp -a "$ROOT/node_modules" "$BACKEND/node_modules"
 "$ROOT/prune.sh" "$BACKEND/node_modules"
 
 # --- 1b. integrated desktop plugins (tracked source, not npm deps) ----------
-# Copy directory CONTENTS (`/.`) so a destination that already exists from the
-# node_modules copy is merged, never nested one level deeper.
-mkdir -p "$BACKEND/node_modules/@deepseek-ai"
-for p in dsh-git dsh-client-ui-git dsh-billing dsh-client-ui-billing dsh-updater dsh-client-ui-updater; do
-  cp -a "$ROOT/plugins/$p/." "$BACKEND/node_modules/@deepseek-ai/$p/"
-done
-# Unscoped third-party plugins: land at node_modules/<name> (not under @deepseek-ai).
-# dsh-skills is the global skill hub (replaces the old read-only dsh-skill-manager);
-# dsh-web-shell is the built-in web shell (right-docked xterm.js PTY). Both ship as
-# self-contained plugin bundles staged under plugins/.
-mkdir -p "$BACKEND/node_modules"
-for p in dsh-skills dsh-web-shell; do
-  if [ -d "$ROOT/plugins/$p" ]; then
-    cp -a "$ROOT/plugins/$p/." "$BACKEND/node_modules/$p/"
+# Every directory under plugins/ is a self-contained plugin bundle. Its
+# destination under node_modules/<scope>/<name> is read from the plugin own
+# package.json "name" field -- so dropping a new dir under plugins/ is all that
+# is needed to bundle it (see add-plugin.sh). No per-plugin copy block required.
+# Copy directory CONTENTS via `cp -a src/. dest` so an existing dest is merged.
+copy_plugin() {
+  local src="$1" name
+  name="$(node -e 'const path=require("path");const p=process.argv[1];const j=require(path.resolve(p));process.stdout.write(j.name||"")' "$src/package.json" 2>/dev/null)" || name=""
+  if [ -z "$name" ]; then
+    echo "  WARN: no package.json name for plugin $src; skipping" >&2
+    return 0
   fi
+  local dest="$BACKEND/node_modules/$name"
+  mkdir -p "$(dirname "$dest")"
+  cp -a "$src/." "$dest/"
+  echo "  bundled $name -> node_modules/$name"
+}
+# Unscoped plugin dirs: plugins/<pkg> and scoped dirs: plugins/@scope/<pkg>.
+# Skip dirs that are just scope containers (no own package.json).
+for pd in "$ROOT"/plugins/*/ "$ROOT"/plugins/@*/*/; do
+  [ -d "$pd" ] || continue
+  [ -f "$pd/package.json" ] || continue   # scope container, not a plugin
+  copy_plugin "${pd%/}"
 done
-# Scoped third-party plugin (@opendsh/*): lands at node_modules/@opendsh/<name>.
-if [ -d "$ROOT/plugins/@opendsh/dsh-plugin-setting-mcp" ]; then
-  mkdir -p "$BACKEND/node_modules/@opendsh"
-  cp -a "$ROOT/plugins/@opendsh/dsh-plugin-setting-mcp/." "$BACKEND/node_modules/@opendsh/dsh-plugin-setting-mcp/"
-fi
-# Scoped third-party plugin (@oil-oil/*): dsh-vision lands at node_modules/@oil-oil/<name>.
-if [ -d "$ROOT/plugins/@oil-oil/dsh-vision" ]; then
-  mkdir -p "$BACKEND/node_modules/@oil-oil"
-  cp -a "$ROOT/plugins/@oil-oil/dsh-vision/." "$BACKEND/node_modules/@oil-oil/dsh-vision/"
-fi
-# Scoped third-party plugins (@frostgao/*): @frostgao/dsh-usage-cost and
-# @frostgao/dsh-theme-blackgold land at node_modules/@frostgao/<name>. The
-# profile reaches them through symlinks at
-# $DSH_HOME/profiles/node_modules/@frostgao/<name> (created at install time,
-# same convention as the other desktop overlay plugins).
-mkdir -p "$BACKEND/node_modules/@frostgao"
-for p in dsh-usage-cost dsh-theme-blackgold; do
-  if [ -d "$ROOT/plugins/@frostgao/$p" ]; then
-    cp -a "$ROOT/plugins/@frostgao/$p/." "$BACKEND/node_modules/@frostgao/$p/"
-  fi
-done
-
 # --- 1c. Settings-panel nav icons (idempotent patch) ------------------------
 # ui-settings-general maps nav glyphs by section id; teach it the "git" and
 # "updater" ids so those sections show fitting icons instead of the gear.
@@ -156,6 +142,12 @@ codesign --force --sign - "$BACKEND/node" 2>/dev/null || true
 
 # --- 3. launcher + profile overlay ----------------------------------------
 cp "$ROOT/launcher.mjs" "$BACKEND/launcher.mjs"
+# Runtime plugin helpers (方案 C): shim generator + per-profile plugin CLI.
+# desktop-bin.mjs is imported by launcher.mjs; plugins.mjs is the CLI entry.
+cp "$ROOT/desktop-bin.mjs" "$BACKEND/desktop-bin.mjs"
+cp "$ROOT/plugins.mjs" "$BACKEND/plugins.mjs"
+# The bundled pnpm (declared in package.json) enables dsh plugin in the app.
+# node_modules is copied above; just verify the entry exists here.
 # prune.patch.yml: without KEEP_EXTRA_PROVIDERS the Pi.ai multi-provider row is
 # disabled (its SDKs were deleted by prune.sh); with it, only the (no-op by
 # default) OTLP telemetry row stays disabled so Pi.ai actually loads.
@@ -176,7 +168,6 @@ cp "$ROOT/updater.patch.yml" "$BACKEND/updater.patch.yml"
 cp "$ROOT/skills-hub.patch.yml" "$BACKEND/skills-hub.patch.yml"
 cp "$ROOT/mcp-settings.patch.yml" "$BACKEND/mcp-settings.patch.yml"
 cp "$ROOT/vision.patch.yml" "$BACKEND/vision.patch.yml"
-cp "$ROOT/web-shell.patch.yml" "$BACKEND/web-shell.patch.yml"
 cp "$ROOT/theme-blackgold.patch.yml" "$BACKEND/theme-blackgold.patch.yml"
 
 # --- 4. compile the native WKWebView shell ---------------------------------

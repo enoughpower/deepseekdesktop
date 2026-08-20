@@ -23,6 +23,9 @@ desktop/
 │   ├── make_icon.swift     # 图标生成（可选）
 │   └── icon.icns           # 已生成的图标
 ├── launcher.mjs            # 后端监督进程：spawn dsh web，确认就绪后输出 DSH_READY=<url>
+├── desktop-bin.mjs         # node/pnpm 运行时 shim 生成器（方案 C）
+├── plugins.mjs             # 用户级插件 CLI：add/remove/list（方案 C）
+├── add-plugin.sh           # 一键装内置插件 / --runtime 走用户级安装
 ├── prune.patch.yml         # 禁用被裁剪掉的插件行（llm-pi-ai、telemetry）
 ├── git.patch.yml           # 注册内置 Git 插件
 ├── billing.patch.yml       # 注册内置余额/消费插件
@@ -30,7 +33,6 @@ desktop/
 ├── skills-hub.patch.yml   # 注册内置全局技能库插件 dsh-skills
 ├── mcp-settings.patch.yml  # 注册内置 MCP 服务管理插件
 ├── vision.patch.yml        # 注册识图插件 dsh-vision（接管 llm-deepseek）
-├── web-shell.patch.yml     # 注册内置 Web 终端插件 dsh-web-shell
 ├── theme-blackgold.patch.yml # 注册黑金主题插件（@frostgao/dsh-theme-blackgold）
 ├── prune.sh                # node_modules 精简脚本
 ├── build.sh                # 一键构建
@@ -214,31 +216,6 @@ Streamable HTTP），点「保存」即热更新生效（无需重启进程）�
 | `plugins/@opendsh/dsh-plugin-setting-mcp/` | 插件源码（宿主半：typert `ctx.mcp` 服务；浏览器半：设置页 MCP 服务管理） |
 | `mcp-settings.patch.yml` | 注册该插件（launcher 经 `--patch` 传入） |
 
-
-## Web 终端（dsh-web-shell）
-
-内置了第三方插件 **dsh-web-shell**（npm 包），在 Web GUI 右侧停靠一个可折叠的
-**交互式真终端**：浏览器端用 xterm.js 渲染，宿主侧通过 `/api/shell` WebSocket 把
-每个连接桥接到一个本机 PTY（bash / zsh）。
-
-功能：
-
-- **右侧停靠**：打开后主对话栏自动让位，不再遮挡会话内容（需要较新的
-  `dsh-client-ui-layout`，rc.7 已自带）。
-- **可调宽度**：拖动 shell 左边缘即可调整宽度（360–960px），按 profile 记忆。
-- **折叠 / 关闭分离**：折叠只隐藏面板但保持 PTY 会话存活；关闭才真正终止会话。
-- **bash / zsh 切换**：切换时关闭旧 PTY 并启动新 shell。
-- **对 agent 不可见**：终端操作不进入对话上下文，纯人工终端。
-
-用窗口右侧的 **❯_** 按钮打开 shell。该插件是纯 ESM、无原生二进制，rc.7 已自带
-其全部 peer 依赖（`ws`、`@deepseek-ai/dsh-subprocess` / `dsh-host-webserver` /
-`dsh-client-ui-layout` 等），xterm.js 已内联进浏览器半部，无需额外安装。
-
-| 文件 | 作用 |
-|---|---|
-| `plugins/dsh-web-shell/` | 插件源码（宿主半：`/api/shell` WebSocket→PTY 桥；浏览器半：右侧停靠 xterm.js 面板） |
-| `web-shell.patch.yml` | 注册该插件（launcher 经 `--patch` 传入） |
-
 ## 余额（DeepSeek 平台 + OpenCode Go 用量）
 
 内置的余额插件在「设置 → 余额」里展示三类信息：
@@ -261,10 +238,36 @@ Streamable HTTP），点「保存」即热更新生效（无需重启进程）�
 | `billing.patch.yml` | 注册这两个插件（launcher 经 `--patch` 传入） |
 
 
+## 用户插件（方案 C：运行时安装，不重编译）
+
+内核的 `dsh` 原生支持用户级插件：把应用装进 **profile**（`~/.dsh/profiles/web`）里的
+`node_modules`，通过声明 `dsh.bundle` 自动加入 layer 栈。本应用已内置该机制：
+
+- **运行时自带的 node/pnpm**：`launcher.mjs` 启动时用 `desktop-bin.mjs` 生成
+  `~/.dsh/.desktop-bin/{node,pnpm}` shim 并前置 PATH，`dsh plugin` 因此能在
+  打包后的应用里跑通，无需系统 Node / pnpm。
+- **一键 CLI**（`add-plugin.sh`）：
+  ```sh
+  ./add-plugin.sh --runtime add <npm包名或本地目录>   # 装
+  ./add-plugin.sh --runtime list                      # 列出已装的 bundle
+  ./add-plugin.sh --runtime remove <包名>             # 卸
+  ```
+- **不重编译**：用户插件存在 `~/.dsh`,`./build.sh` 重建/升级只重写应用包内的
+  node_modules，不会清掉用户已装插件。要装的是声明了 `dsh.bundle` 的 bundle 插件
+  （`package.json` 带 `dsh.bundle.patch` + `cordis.patch.yml`）。
+
+> `--runtime add` 会传 `-w`（profile 是 pnpm workspace 根，pnpm 需要该标志）。
+> `remove`/`list` 用包全名（如 `@scope/name`），以 `list` 输出为准。
+>
+> **两类插件都支持**：声明 `dsh.bundle` 的插件（如 git/billing）装完自动加入 bundle 层；
+> 只声明 `dsh.client` 的纯前端插件（如 `@frostgao` 的主题/用量）`dsh plugin add` 不会自动激活，
+> `plugins.mjs` 会在 profile 的用户层 `cordis.patch.yml` 里自动补一条激活 row，移除时一并清理。
+
 ## 黑金主题（@frostgao/dsh-theme-blackgold）
 
-内置 `@frostgao/dsh-theme-blackgold`（与用量插件同作者的配搭主题），把 Web 界面
-重绘成**黑金配色**（黑白底 + 金色强调，浅色 / 深色两套）：
+内置 `@frostgao/dsh-theme-blackgold`（与用量插件同作者的配搭主题），作为**应用内插件**打包
+（源码在 `plugins/@frostgao/dsh-theme-blackgold`），把 Web 界面重绘成**黑金配色**
+（黑白底 + 金色强调，浅色 / 深色两套）：
 
 - **品牌标**：鲸鱼 logo 金色描边 + 悬停微动；`HARNESS` 徽标黑底金字 + 周期性高光扫过。
 - **页面强调色**：发送键、激活的会话/轨迹/工作区标签、光标、高亮等金色化。

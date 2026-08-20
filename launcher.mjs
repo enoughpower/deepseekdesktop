@@ -15,18 +15,38 @@ import { spawn } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import http from "node:http";
+import { ensureDesktopBin, desktopBinDir } from "./desktop-bin.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DSH_BIN = join(HERE, "node_modules", "@deepseek-ai", "dsh", "lib", "bin.js");
-const PRUNE_PATCH = join(HERE, "prune.patch.yml");
-const GIT_PATCH = join(HERE, "git.patch.yml");
-const BILLING_PATCH = join(HERE, "billing.patch.yml");
-const UPDATER_PATCH = join(HERE, "updater.patch.yml");
-const SKILLS_HUB_PATCH = join(HERE, "skills-hub.patch.yml");
-const MCP_SETTINGS_PATCH = join(HERE, "mcp-settings.patch.yml");
-const VISION_PATCH = join(HERE, "vision.patch.yml");
-const WEB_SHELL_PATCH = join(HERE, "web-shell.patch.yml");
-const THEME_BLACKGOLD_PATCH = join(HERE, "theme-blackgold.patch.yml");
+
+/**
+ * Discover the overlay patches to apply. Any *.patch.yml dropped into the
+ * backend directory is auto-registered -- no launcher change needed to add a
+ * plugin (see add-plugin.sh). Each patch is a Cordis patch file that inserts
+ * the plugin's host/browser halves (e.g. git.patch.yml inserts dsh-git +
+ * dsh-client-ui-git). prune.patch.yml is just another patch and is picked up
+ * the same way. Sorted by filename so ordering is deterministic.
+ */
+import { existsSync, readdirSync } from "node:fs";
+
+function collectPatches() {
+  const out = [];
+  let files = [];
+  try {
+    files = readdirSync(HERE).filter((f) => f.endsWith(".patch.yml")).sort();
+  } catch {
+    return out;
+  }
+  for (const f of files) {
+    const p = join(HERE, f);
+    if (existsSync(p)) out.push(p);
+  }
+  return out;
+}
+
+/** Patch files applied to the backend, in deterministic (filename) order. */
+const PATCH_FILES = collectPatches();
 
 /** Build the backend environment. A Finder-launched app inherits a bare PATH,
  *  so we restore the standard macOS search path plus the Homebrew roots.
@@ -35,7 +55,12 @@ const THEME_BLACKGOLD_PATCH = join(HERE, "theme-blackgold.patch.yml");
  *  `node` against the bundled binary instead of a possibly-broken system one. */
 function buildEnv() {
   const env = { ...process.env };
+  // Ensure the desktop's own node+pnpm shims (~/.dsh/.desktop-bin) and prepend
+  // them so `dsh plugin` (which shells out to bare `pnpm`) resolves against the
+  // bundled runtime -- no system node/pnpm required. pnpm not bundled => no-op.
+  ensureDesktopBin().catch(() => {});
   const wanted = [
+    desktopBinDir(),
     HERE,
     "/opt/homebrew/bin",
     "/usr/local/bin",
@@ -56,20 +81,11 @@ function buildEnv() {
   return env;
 }
 
-import { existsSync } from "node:fs";
-
-// Launcher flags must precede the web app's flags; `--patch` disables the
-// optional provider/telemetry rows whose packages are pruned from the bundle.
+// Launcher flags must precede the web app's flags. All *.patch.yml files in
+// the backend directory are applied in filename order (see collectPatches);
+// each one disables or inserts plugin rows whose packages are bundled.
 const launcherArgs = [DSH_BIN, "web"];
-if (existsSync(PRUNE_PATCH)) launcherArgs.push("--patch", PRUNE_PATCH);
-if (existsSync(GIT_PATCH)) launcherArgs.push("--patch", GIT_PATCH);
-if (existsSync(BILLING_PATCH)) launcherArgs.push("--patch", BILLING_PATCH);
-if (existsSync(UPDATER_PATCH)) launcherArgs.push("--patch", UPDATER_PATCH);
-if (existsSync(SKILLS_HUB_PATCH)) launcherArgs.push("--patch", SKILLS_HUB_PATCH);
-if (existsSync(MCP_SETTINGS_PATCH)) launcherArgs.push("--patch", MCP_SETTINGS_PATCH);
-if (existsSync(VISION_PATCH)) launcherArgs.push("--patch", VISION_PATCH);
-if (existsSync(WEB_SHELL_PATCH)) launcherArgs.push("--patch", WEB_SHELL_PATCH);
-if (existsSync(THEME_BLACKGOLD_PATCH)) launcherArgs.push("--patch", THEME_BLACKGOLD_PATCH);
+for (const patch of PATCH_FILES) launcherArgs.push("--patch", patch);
 launcherArgs.push("--host", "127.0.0.1", "--port", "0");
 
 const child = spawn(

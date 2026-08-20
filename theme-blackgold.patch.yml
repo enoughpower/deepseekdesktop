@@ -4,7 +4,7 @@
 # restyles the web GUI with gold accents on a black-and-white base (light and
 # dark). This mirrors the package's README insertion row so the desktop
 # overlay stays a single --patch layer, same convention as git/billing/
-# updater/skill-manager/web-shell. It rides the official dsh-client-ui-theme
+# updater/skill-manager. It rides the official dsh-client-ui-theme
 # token override seam (immediately: true, platform: web).
 - insert:
     - id: ui-blackgold-theme
