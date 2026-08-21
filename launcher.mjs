@@ -68,7 +68,7 @@ const PATCH_FILES = collectPatches();
 /** Build the backend environment. A Finder-launched app inherits a bare PATH,
  *  so we restore the standard macOS search path plus the Homebrew roots.
  *  The bundled `node` lives at <backend>/node; putting the backend dir first
- *  lets child processes (e.g. the dsh-vision plugin's vision subprocess) run
+ *  lets child processes (e.g. the dsh-vision-router plugin's vision subprocess) run
  *  `node` against the bundled binary instead of a possibly-broken system one. */
 function buildEnv() {
   const env = { ...process.env };
@@ -101,9 +101,11 @@ function buildEnv() {
 // Launcher flags must precede the web app's flags. All *.patch.yml files in
 // the backend directory are applied in filename order (see collectPatches);
 // each one disables or inserts plugin rows whose packages are bundled.
+// `--no-open` (rc.8+): the native shell renders the UI in its own WKWebView,
+// so the backend must NOT spawn the default browser on startup.
 const launcherArgs = [DSH_BIN, "web"];
 for (const patch of PATCH_FILES) launcherArgs.push("--patch", patch);
-launcherArgs.push("--host", "127.0.0.1", "--port", "0");
+launcherArgs.push("--host", "127.0.0.1", "--port", "0", "--no-open");
 
 const child = spawn(
   process.execPath,

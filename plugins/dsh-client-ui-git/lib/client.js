@@ -24,7 +24,7 @@ window.__ModuleLoader__.load({
       ".dshGitAhead{color:var(--dsw-alias-state-warn-primary);font-size:12px;font-weight:600}",
       ".dshGitBehind{color:var(--dsw-alias-state-error-primary);font-size:12px;font-weight:600}",
       ".dshGitPath{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-tertiary);font-family:ui-monospace,Menlo,monospace;font-size:12px;text-align:right}",
-      ".dshGitBody{flex:1;min-height:0;display:grid;grid-template-columns:300px minmax(320px,1fr) minmax(380px,1.3fr);gap:0}",
+      ".dshGitBody{flex:1;min-height:0;display:grid;grid-template-columns:300px minmax(320px,1fr) minmax(380px,1.3fr);grid-template-rows:minmax(0,1fr);gap:0;overflow:hidden;min-width:0}",
       ".dshGitCol{display:flex;flex-direction:column;min-width:0;min-height:0;border-right:1px solid var(--dsw-alias-border-l2)}",
       ".dshGitCol:last-child{border-right:none}",
       ".dshGitSection{display:flex;flex-direction:column;gap:8px;min-height:0;padding:12px 12px 8px;border-bottom:1px solid var(--dsw-alias-border-l2)}",
@@ -123,10 +123,20 @@ window.__ModuleLoader__.load({
       ".dshGitFileViewContent{flex:1;min-width:0;white-space:pre-wrap;word-break:break-all;color:var(--dsw-alias-label-secondary)}",
       ".dshGitModalMask{position:absolute;inset:0;background:var(--dsw-alias-bg-mask-1);display:flex;align-items:center;justify-content:center;z-index:130}",
       // sidebar footer trigger — same look as the Settings trigger
-      ".dshGitFooterTrigger{box-sizing:border-box;cursor:pointer;width:calc(100% + 4px);height:42px;color:var(--dsw-alias-label-primary);background:0 0;border:none;border-radius:12px;flex:none;align-items:center;gap:8px;margin:4px -2px;padding:0 10px 0 8px;font-family:inherit;font-size:14px;line-height:22px;display:flex;overflow:hidden}",
-      ".dshGitFooterTrigger:hover{background:var(--dsw-alias-interactive-bg-hover)}",
-      ".dshGitFooterTrigger.dshGitFooterTriggerRail{border-radius:50%;justify-content:center;gap:0;width:36px;height:36px;margin:8px 0 10px;padding:0}",
-      ".dshGitFooterTriggerLabel{white-space:nowrap;overflow:hidden;flex:1;min-width:0;text-align:left}",
+      // The official active-phase rule styles the view area as
+      // `flex:1 0 auto; min-height:auto` — flex-basis:auto resolves to the
+      // CONTENT height, so a tall Git page stretches the whole conversation
+      // (window scrolls endlessly). When the Git view is active, force the
+      // view-area wrapper to flex-basis 0 with a zero min-height so GitView
+      // fills the fixed area and only its inner columns scroll. Scoped via
+      // :has() + structure to git sessions only; chat/trajectory are untouched.
+      "[data-slot=\"conversation.session\"]:has([data-git-view]) > div{flex:1 1 0% !important;min-height:0 !important}",
+      ".dshGitView{width:100%;flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column}",
+      // While the Git view is the active conversation view, hide the composer
+      // (input bar) below it — Git replaces the chat/trajectory area entirely.
+      // `:has()` works in the WKWebView (Safari 15.4+); on older systems the
+      // composer simply stays visible.
+      "[data-slot=\"conversation.session\"]:has([data-git-view]) ~ [data-composer-seat]{display:none}",
       ".dshGitModal{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);border-radius:12px;padding:16px;min-width:360px;max-width:480px;box-shadow:var(--dsw-shadow-lv3)}",
       ".dshGitModal h4{margin:0 0 10px;font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary)}",
       ".dshGitModal .dshGitRow{margin-top:10px;justify-content:flex-end}",
@@ -295,7 +305,17 @@ window.__ModuleLoader__.load({
     }
 
     // ── full-screen Git panel ───────────────────────────────────────────────
-    function GitPanel({ onClose, sessionCwd }) {
+    function GitView(props) {
+      // Conversation view standard kit guarantees useSessions — call it
+      // UNCONDITIONALLY (a conditional call would make React's hook count flip
+      // between renders and crash the whole view ring). Resolve the current
+      // session's workspace cwd so Git auto-enters that repository.
+      const sessionCwd = props.useSessions((s) => {
+        const cur = s.current;
+        if (!cur) return "";
+        const entry = s.byId ? s.byId[cur] : undefined;
+        return entry && typeof entry.cwd === "string" ? entry.cwd : "";
+      });
       const [cwd, setCwd] = react.useState("");
       const [branch, setBranch] = react.useState("");
       const [upstream, setUpstream] = react.useState("");
@@ -382,15 +402,6 @@ window.__ModuleLoader__.load({
         if (activePath) refresh(activePath);
         // eslint-disable-next-line react-hooks/exhaustive-deps
       }, [activePath]);
-
-      // Esc closes
-      react.useEffect(() => {
-        const onKey = (e) => {
-          if (e.key === "Escape" && !modal) onClose();
-        };
-        document.addEventListener("keydown", onKey, true);
-        return () => document.removeEventListener("keydown", onKey, true);
-      }, [onClose, modal]);
 
       // load workspace from the conversation context if available
       const showDiff = async (file, isStaged) => {
@@ -687,7 +698,7 @@ window.__ModuleLoader__.load({
         ] });
       };
 
-      return react_dom.createPortal(jsxs("div", { className: "dshGitOverlay", "data-git-panel": true, children: [
+      return jsxs("div", { className: "dshGitRoot dshGitView", "data-git-view": true, children: [
         jsxs("div", { className: "dshGitTop", children: [
           jsx("span", { className: "dshGitTopTitle", children: [
             jsx(primitives.IconBranchOutline16, { size: 18 }),
@@ -710,7 +721,6 @@ window.__ModuleLoader__.load({
           jsx(primitives.Button, { variant: "outline", size: "sm", onClick: () => { if (pathInput.trim()) { setCwd(pathInput.trim()); refresh(pathInput.trim()); } }, disabled: !pathInput.trim() || loading, children: "加载" }),
           jsx(primitives.Button, { variant: "outline", size: "sm", onClick: () => setShowBranchManager((v) => !v), children: showBranchManager ? "收起分支" : "分支管理" }),
           jsx(primitives.Button, { variant: "outline", size: "sm", onClick: () => refresh(), disabled: loading, children: loading ? "刷新中…" : "刷新" }),
-          jsx(primitives.Button, { variant: "primary", size: "sm", onClick: onClose, children: "关闭" }),
         ] }),
         jsxs("div", { className: "dshGitBody", children: [
           // ── left column: branches + file changes ──
@@ -829,45 +839,6 @@ window.__ModuleLoader__.load({
             jsx(primitives.Button, { variant: "primary", size: "sm", onClick: () => deleteBranch(confirmDelete), children: "删除" }),
           ] }),
         ] }) }) : null,
-      ] }), document.body);
-    }
-
-    // ── sidebar footer entry (opens the full-screen panel) ─────────────────
-    function GitFooterButton(props) {
-      const [open, setOpen] = react.useState(false);
-      const { useSessions, wide } = props;
-      // compute the current session's workspace cwd at render time (hook rules:
-      // useSessions must be called at the top level of the component).
-      // The session list snapshot shape is `{ current, byId, ... }` (the shell
-      // itself reads `state.byId[id].title`), so resolve cwd via byId.
-      let sessionCwd = "";
-      if (useSessions) {
-        try {
-          const v = useSessions((s) => {
-            const cur = s.current;
-            if (!cur) return "";
-            const entry = s.byId ? s.byId[cur] : undefined;
-            return entry && typeof entry.cwd === "string" ? entry.cwd : "";
-          });
-          if (typeof v === "string") sessionCwd = v;
-        } catch (e) { /* session store unavailable */ }
-      }
-      const openPanel = react.useCallback(() => {
-        setOpen(true);
-      }, []);
-      return jsxs(Fragment, { children: [
-        jsx("button", {
-          type: "button",
-          className: "dshGitFooterTrigger" + (wide ? "" : " dshGitFooterTriggerRail"),
-          title: "打开 Git 面板" + (sessionCwd ? "（" + sessionCwd + "）" : ""),
-          "aria-label": "Git",
-          onClick: openPanel,
-          children: jsxs(Fragment, { children: [
-            jsx(primitives.IconBranchOutline16, { size: wide ? 16 : 18 }),
-            wide ? jsx("span", { className: "dshGitFooterTriggerLabel", children: "Git" }) : null,
-          ] }),
-        }),
-        open ? jsx(GitPanel, { onClose: () => setOpen(false), sessionCwd }) : null,
       ] });
     }
 
@@ -875,10 +846,13 @@ window.__ModuleLoader__.load({
     const inject = ["slots"];
 
     function apply(ctx) {
-      ctx.slots.inject("sidebar.footer.action", () =>
+      // Git becomes a conversation view tab ("对话轨迹" right side): clicking
+      // it replaces the chat/trajectory area with the Git page. The old
+      // sidebar-footer entry has been removed.
+      ctx.slots.inject("conversation.view", () =>
         ctx.slots.register(
-          { name: "sidebar.footer.action", id: "git-open", order: 10, label: () => "Git" },
-          GitFooterButton,
+          { name: "conversation.view", id: "git", order: 20, label: () => "Git", inject: () => ({}) },
+          GitView,
         ),
       );
     }

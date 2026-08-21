@@ -1,5 +1,4 @@
-import { spawn } from "node:child_process";
-import { execFile } from "node:child_process";
+import { spawn, execFile, execFileSync } from "node:child_process";
 import { promisify } from "node:util";
 import { mkdtempSync, readFileSync, writeFileSync, rmSync, mkdirSync, existsSync, readdirSync, renameSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -28,6 +27,13 @@ const APP_EXE = join(APP_DIR, "Contents", "MacOS", "DeepSeekHarness");
 const DSH_PKG = join(AI_ROOT, "dsh", "package.json");
 const REGISTRY = "https://registry.npmjs.org";
 const DSH_NAME = "@deepseek-ai/dsh";
+/**
+ * npm dist-tag the updater tracks. The desktop app ships the in-development
+ * harness line, so it must compare against the `next` prerelease channel (the
+ * `latest` tag lags behind the release candidates — e.g. latest=rc.7 while
+ * the app already runs rc.8). Override with $DSH_UPDATE_TAG if needed.
+ */
+const UPDATE_TAG = (process.env.DSH_UPDATE_TAG || "next").trim() || "next";
 const TIMEOUT_MS = 30_000;
 const MAX_BODY_BYTES = 256_000;
 const DOWNLOAD_CONCURRENCY = 6;
@@ -81,16 +87,17 @@ async function registryGet(path, timeoutMs = TIMEOUT_MS, abbreviated = false) {
   return res.json();
 }
 
-/** Latest published dsh metadata (version + tarball + dependencies). */
+/** Metadata of the tracked npm dist-tag (version + tarball + dependencies). */
 async function fetchLatestDsh() {
-  return await registryGet(`${DSH_NAME}/latest`);
+  return await registryGet(`${DSH_NAME}/${UPDATE_TAG}`);
 }
 
 // ── update resolution ──────────────────────────────────────────────────────
 /**
- * Walk the @deepseek-ai/* dependency closure of dsh@latest and resolve every
- * monorepo package to its exact target version. Returns entries in a stable
- * order (parents before children is not required — tarballs are independent).
+ * Walk the @deepseek-ai/* dependency closure of dsh@<tracks tag> and resolve
+ * every monorepo package to its exact target version. Returns entries in a
+ * stable order (parents before children is not required — tarballs are
+ * independent).
  */
 async function resolveUpdateSet(latestMeta) {
   const targetVersion = latestMeta.version;
@@ -246,18 +253,56 @@ async function installPackages(entries, onStatus) {
 }
 
 // ── restart ────────────────────────────────────────────────────────────────
+/** Read the bundle identifier from the app's Info.plist (used to quit the old
+ *  instance gracefully via Apple Events). Falls back to the known id. */
+function bundleId() {
+  try {
+    const plist = join(APP_DIR, "Contents", "Info.plist");
+    const id = execFileSync("/usr/libexec/PlistBuddy", ["-c", "Print :CFBundleIdentifier", plist], {
+      encoding: "utf8",
+      timeout: 5000,
+    }).trim();
+    if (id) return id;
+  } catch {
+    /* fall through */
+  }
+  return "ai.deepseek.harness.desktop";
+}
+
 /**
- * Spawn a detached helper that waits, re-signs the bundle (modifying its
- * contents invalidates the ad-hoc seal), kills the current app, and relaunches
- * it via `open -n`. The helper survives this process being terminated.
+ * Spawn a detached helper that waits, then shuts the OLD app down and
+ * relaunches via `open -n`.
+ *
+ * Shutting down relies on AppleScript `quit` (an Apple Event), which drives
+ * NSApplication's normal termination: `applicationWillTerminate` →
+ * `backend.stop()` → launcher forwards SIGTERM → dsh web exits. That closes
+ * BOTH the window and the backend, so the old instance is fully gone before
+ * the new one opens. (SIGTERM alone was not enough — its default action skips
+ * `applicationWillTerminate` and orphans the backend, which is why the old app
+ * appeared to stay open with a white screen.)
+ *
+ * A force-clear pass (pgrep + TERM, then KILL) is kept as a belt-and-braces
+ * fallback for anything the Apple Event did not reach. The bundle path is
+ * regex-escaped ([.]) so pgrep cannot match the helper's own command line,
+ * letting the helper finish the re-sign + relaunch.
  */
 function scheduleRestart(delayMs = 2500) {
   if (!existsSync(APP_EXE)) return { scheduled: false, reason: "not a packaged app bundle" };
+  const RE = APP_DIR.replace(/\./g, "[.]");
   const script = [
     `sleep ${Math.max(1, Math.round(delayMs / 1000))}`,
-    `APP_PID=$(pgrep -f "${APP_EXE}" | head -1)`,
-    `[ -n "$APP_PID" ] && kill "$APP_PID" 2>/dev/null || true`,
+    // 1) Graceful quit via Apple Events (NSApplication termination chain).
+    `osascript -e 'tell application id "${bundleId()}" to quit' >/dev/null 2>&1 &`,
+    `OSA=$!`,
+    `sleep 6`,
+    `kill $OSA 2>/dev/null || true`,
+    // 2) Force-clear anything still alive under this bundle path.
+    `PIDS=$(pgrep -f "${RE}" 2>/dev/null || true)`,
+    `for p in $PIDS; do kill "$p" 2>/dev/null || true; done`,
     `sleep 2`,
+    `PIDS=$(pgrep -f "${RE}" 2>/dev/null || true)`,
+    `for p in $PIDS; do kill -9 "$p" 2>/dev/null || true; done`,
+    `sleep 1`,
     `codesign --force --deep --sign - "${APP_DIR}" >/dev/null 2>&1 || true`,
     `open -n "${APP_DIR}"`,
   ].join("\n");
@@ -276,7 +321,7 @@ const handlers = {
     return ok({ version: currentVersion(), package: DSH_NAME });
   },
 
-  /** Compare the installed version against the latest published dsh. */
+  /** Compare the installed version against the tracked npm dist-tag. */
   async check() {
     const current = currentVersion();
     const latest = await fetchLatestDsh();

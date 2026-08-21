@@ -28,11 +28,11 @@ desktop/
 ├── add-plugin.sh           # 一键装内置插件 / --runtime 走用户级安装
 ├── prune.patch.yml         # 禁用被裁剪掉的插件行（llm-pi-ai、telemetry）
 ├── git.patch.yml           # 注册内置 Git 插件
-├── billing.patch.yml       # 注册内置余额/消费插件
+├── billing.patch.yml       # 注册内置用量插件 dsh-usage-cost（@frostgao）
 ├── updater.patch.yml       # 注册内置版本号/检查更新插件
 ├── skills-hub.patch.yml   # 注册内置全局技能库插件 dsh-skills
 ├── mcp-settings.patch.yml  # 注册内置 MCP 服务管理插件
-├── vision.patch.yml        # 注册识图插件 dsh-vision（接管 llm-deepseek）
+├── vision.patch.yml        # 注册识图插件 dsh-vision-router v1.7.3（不接管 llm-deepseek）
 ├── theme-blackgold.patch.yml # 注册黑金主题插件（@frostgao/dsh-theme-blackgold）
 ├── prune.sh                # node_modules 精简脚本
 ├── build.sh                # 一键构建
@@ -92,14 +92,14 @@ KEEP_EXTRA_PROVIDERS=0 ./build.sh   # 最小版：仅 DeepSeek，约小 110 MB
 ## 版本号与检查更新
 
 应用在**窗口右上角**常驻显示当前 DeepSeek Harness 版本号（`@deepseek-ai/dsh` 包版本，
-如 `v0.1.0-rc.6`）。「设置 → 检查更新」里可以：
+如 `v0.1.0-rc.8`）。「设置 → 检查更新」里可以：
 
 - **检查更新**：对比 npm registry 上 `@deepseek-ai/dsh` 的最新版本；
 - **立即更新**：后台下载最新闭包（dsh 及其全部 `@deepseek-ai/*` 依赖）并原子替换进
   应用包内的 `node_modules`，完成后自动重启应用（重启前会重新签名，保证 arm64
   上的 ad-hoc 签名仍然有效）。
 
-实现是内置插件（与 git/billing 同模式）：
+实现是内置插件（与 git 同模式）：
 
 | 文件 | 作用 |
 |---|---|
@@ -117,7 +117,7 @@ KEEP_EXTRA_PROVIDERS=0 ./build.sh   # 最小版：仅 DeepSeek，约小 110 MB
 
 ```bash
 cd desktop
-# 1) 把 package.json 里 @deepseek-ai/dsh 的版本号改成目标版本（如 0.1.0-rc.7）
+# 1) 把 package.json 里 @deepseek-ai/dsh 的版本号改成目标版本（如 0.1.0-rc.8）
 # 2) 用可用的 node/npm 重装依赖（系统 node 可能因 icu4c 损坏，用 nvm 的 node）
 $HOME/.nvm/versions/node/v22.19.0/bin/npm install --omit=dev --no-audit --no-fund
 # 3) 重建
@@ -158,31 +158,27 @@ $HOME/.nvm/versions/node/v22.19.0/bin/npm install --omit=dev --no-audit --no-fun
 | `plugins/dsh-client-ui-git/` | 浏览器半部：侧边栏 Git 入口 + 全屏面板 UI |
 | `git.patch.yml` | 注册这两个插件（launcher 经 `--patch` 传入） |
 
-## 识图（dsh-vision）
+## 识图（dsh-vision-router）
 
-内置第三方插件 **dsh-vision**（见其
-[GitHub 仓库](https://github.com/oil-oil/dsh-vision)），给纯文本模型（DeepSeek 等）
-提供**近原生图片理解**：
+内置第三方插件 **dsh-vision-router**（见其
+[GitHub 仓库](https://github.com/ysr666/dsh-vision-router)，内置 **v1.7.3**），
+给纯文本模型（DeepSeek 等）提供**像素保真的图片理解**：
 
-- **自动桥接**：主模型支持图片时原图直发；主模型是纯文本时，自动让配置的视觉模型
-  观察原始图片，把观察结果注入上下文，再由 DeepSeek 给出最终回答——多张图一起分析，
-  无需手动点按钮转文字。
-- **设置**：设置 → 插件 → 插件配置 → **「视觉识别」**卡片，选择
-  ZenMux / 阿里云百炼（Model Studio）/ TokenDance / OpenRouter，填 API Key 即用；
-  API Key 走官方凭证服务（浏览器只读、不回显）。
-- **回退链**：没有可用的云视觉服务时，自动回退 macOS 自带 Vision OCR 或 Tesseract。
-- **等价配置**：非密钥字段也可写在 `$DSH_HOME/settings.yaml` 的 `llm-deepseek` 段
-  （`visionBackend` / `visionBackendModel` / `visionBackendBaseURL` / `maxImages`）；
-  密钥用环境变量（如 `ZENMUX_API_KEY`）。
-
-> 说明：dsh-vision 会接管官方 `llm-deepseek` 适配器（保留模型目录、设置与凭证），
-> 已在 rc.7 上做兼容修复（keyed 插槽补 `key`）。原先的「图片转文字」手动插件
-> （image-input）已删除，图片识图统一由 dsh-vision 接管。
+- **原图直看**：图片轮交给视觉模型看原图，DeepSeek 始终负责思考；图片轮就像普通
+  **工具调用**（`vision_ground` → `vision_crop` → `vision_describe` → `vision_pixel_diff`
+  … 可连续多步迭代定位/裁剪/比对/修复），可定位、可验证。
+- **默认免费**：视觉工具兜底 5 个 OVHcloud 匿名视觉模型，免注册免 Key（每 IP、
+  每模型 2 次/分钟）；用户自备视觉模型（智谱/百炼/OpenRouter 等）优先调用。
+- **14 个深看工具**：Q&A / 定位 / 裁剪 / 像素比对 / 取色 / OCR / SVG 矢量化 / 抠图 /
+  HTML 截图 / 长截图识读等；无 Python，基于 sharp / potrace / tesseract / 系统 Chrome。
+- **设置**：设置 → 插件 → 插件配置 → **「Vision Router」**卡片；接管官方路由与否由
+  「隐身模式」开关决定（默认关，官方 `llm-deepseek` 行保持启用）。
+- **不写日志**：指向视觉工具的改写只发生在模型输入层，会话日志里仍是原图。
 
 | 文件 | 作用 |
 |---|---|
-| `plugins/@oil-oil/dsh-vision/` | 插件源码（宿主半：视觉桥接适配器；浏览器半：「视觉识别」配置卡片） |
-| `vision.patch.yml` | 注册该插件并接管 llm-deepseek（launcher 经 `--patch` 传入） |
+| `plugins/dsh-vision-router/` | 插件源码（v1.7.3：宿主路由 + 14 个视觉工具 + 浏览器半设置卡） |
+| `vision.patch.yml` | 注册该插件 + 附件准入放宽（20 MiB / 100 MP / 单边 10000 px）；不接管 llm-deepseek） |
 
 ## 全局技能库（dsh-skills）
 
@@ -220,27 +216,6 @@ Streamable HTTP），点「保存」即热更新生效（无需重启进程）�
 | `plugins/@opendsh/dsh-plugin-setting-mcp/` | 插件源码（宿主半：typert `ctx.mcp` 服务；浏览器半：设置页 MCP 服务管理） |
 | `mcp-settings.patch.yml` | 注册该插件（launcher 经 `--patch` 传入） |
 
-## 余额（DeepSeek 平台 + OpenCode Go 用量）
-
-内置的余额插件在「设置 → 余额」里展示三类信息：
-
-- **DeepSeek 账户余额**：总余额 / 充值余额 / 赠送余额（走 `api.deepseek.com` 的
-  Get User Balance 接口，凭 `DEEPSEEK_API_KEY`）；含「在线充值」入口（跳转
-  `platform.deepseek.com/top_up`）。
-- **消费统计**：最近 7 天每日消费折线图 + 今日 / 本月消费汇总，数据来自
-  `platform.deepseek.com` 的私有用量接口（凭 `DEEPSEEK_PLATFORM_TOKEN`，即
-  platform 控制台 localStorage 的 `userToken`）。
-- **OpenCode Go 用量**：5 小时滚动 / 每周 / 每月 三个套餐窗口的已用百分比、
-  限额与重置时间，进度条按阈值变色（≥50% 橙、≥80% 红）。数据来自
-  `opencode.ai/zen/go/v1/usage`，凭 `OPENCODE_GO_API_KEY`（优先取 DSH 凭据，
-  其次回退 `~/.local/share/opencode/auth.json` 的 `opencode-go` 条目）。
-
-| 文件 | 作用 |
-|---|---|
-| `plugins/dsh-billing/` | 宿主半部：`/billing` JSON API（balance / usage / opencodeUsage / prices 等） |
-| `plugins/dsh-client-ui-billing/` | 浏览器半部：设置「余额」区块（余额卡片 + 7 天折线图 + OpenCode Go 用量卡） |
-| `billing.patch.yml` | 注册这两个插件（launcher 经 `--patch` 传入） |
-
 
 ## 用户插件（方案 C：运行时安装，不重编译）
 
@@ -264,7 +239,7 @@ Streamable HTTP），点「保存」即热更新生效（无需重启进程）�
 > `--runtime add` 会传 `-w`（profile 是 pnpm workspace 根，pnpm 需要该标志）。
 > `remove`/`list` 用包全名（如 `@scope/name`），以 `list` 输出为准。
 >
-> **两类插件都支持**：声明 `dsh.bundle` 的插件（如 git/billing）装完自动加入 bundle 层；
+> **两类插件都支持**：声明 `dsh.bundle` 的插件（如 git/updater）装完自动加入 bundle 层；
 > 只声明 `dsh.client` 的纯前端插件（如 `@frostgao` 的主题/用量）`dsh plugin add` 不会自动激活，
 > `plugins.mjs` 会在 profile 的用户层 `cordis.patch.yml` 里自动补一条激活 row，移除时一并清理。
 
@@ -280,7 +255,7 @@ Streamable HTTP），点「保存」即热更新生效（无需重启进程）�
 - 纯演示层覆盖（走 `dsh-client-ui-theme` 的 token 覆盖），尊重 `prefers-reduced-motion`。
 
 该插件是**客户端专属**（`immediately: true`，无需在设置里开开关），随插件清单在启动时
-自动加载生效。纯 ESM、无原生二进制，依赖的 `@deepseek-ai/dsh-client-ui-theme` 为 rc.7 自带。
+自动加载生效。纯 ESM、无原生二进制，依赖的 `@deepseek-ai/dsh-client-ui-theme` 为 rc.8 自带。
 
 | 文件 | 作用 |
 |---|---|

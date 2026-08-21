@@ -1,6 +1,26 @@
 import Cocoa
 import WebKit
 
+// MARK: - Signal handling (process-wide)
+
+// Graceful shutdown on SIGTERM/SIGINT (the updater's relaunch helper kills this
+// process before reopening the app). A plain default termination would skip
+// `applicationWillTerminate`, orphaning the launcher + dsh backend processes —
+// the "old app stays open" bug. Install process-wide handlers that route the
+// signal to NSApp.terminate on the main thread, so the normal chain runs:
+// applicationWillTerminate → backend.stop() → launcher forwards SIGTERM → dsh
+// web exits. The old instance (window + backend) is then fully gone before the
+// new one opens.
+// (GCD DispatchSources and a per-thread sigwait both failed on macOS: worker
+// threads that never blocked the signal keep the default action alive. A plain
+// signal()/sigaction handler applies to the whole process and wins.)
+func gracefulQuit() {
+    DispatchQueue.main.async { NSApp.terminate(nil) }
+}
+signal(SIGTERM) { _ in gracefulQuit() }
+signal(SIGINT) { _ in gracefulQuit() }
+signal(SIGHUP, SIG_IGN)
+
 // MARK: - Backend supervisor
 
 /// Spawns `node launcher.mjs` inside the app bundle and parses its single
@@ -211,4 +231,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
 let app = NSApplication.shared
 let delegate = AppDelegate()
 app.delegate = delegate
+signal(SIGHUP, SIG_IGN)
+
 app.run()

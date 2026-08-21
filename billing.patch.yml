@@ -1,24 +1,13 @@
-# Desktop-app overlay: register billing + usage/cost plugins.
+# Desktop-app overlay: register the usage/cost plugin.
 #
-# - `billing` is the host half of the official DeepSeek balance/usage view:
-#   a `/billing` JSON API that queries the Get User Balance endpoint and
-#   records the app's own token consumption into a per-day local store.
-# - `ui-billing` is its browser half: a settings section (labelled "余额")
-#   with balance cards, a recharge entry, and a consumption chart.
-# - `usage-cost` is the third-party `@frostgao/dsh-usage-cost` plugin: a
-#   per-session cost badge, per-reply cost chips, and a "用量" settings page
-#   with an interactive trend chart.
+# `usage-cost` is the third-party `@frostgao/dsh-usage-cost` plugin: a
+# per-session cost badge, per-reply cost chips, and a "用量" settings page
+# with an interactive trend chart.
 #
 # The @frostgao package lives in the app backend's node_modules
 # (node_modules/@frostgao/dsh-usage-cost) and is surfaced to the profile via a
 # symlink at $DSH_HOME/profiles/node_modules/@frostgao/dsh-usage-cost — the same
 # convention used for the other desktop overlay plugins (dsh-git, dsh-vision…).
 - insert:
-    - id: billing
-      name: '@deepseek-ai/dsh-billing'
-
-    - id: ui-billing
-      name: '@deepseek-ai/dsh-client-ui-billing'
-
     - id: usage-cost
       name: '@frostgao/dsh-usage-cost'

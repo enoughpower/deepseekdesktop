@@ -127,8 +127,8 @@ PYEOF
 
 # --- 1d. Settings sidebar section order (idempotent patch) -------------------
 # The settings.section slot sorts sidebar rows by order. Reorder the shipped
-# default to: 通用设置/模型/插件/技能/MCP服务/余额/用量/Agent预设/检查更新.
-# The plugin-owned rows (billing/usage/updater/skills/mcp) are patched in their
+# default to: 通用设置/模型/插件/技能/MCP服务/用量/Agent预设/检查更新.
+# The plugin-owned rows (usage/updater/skills/mcp) are patched in their
 # source under plugins/; agent-presets is an official package so we patch its
 # order here (20 -> 45) so it lands right before updater (50).
 python3 - "$BACKEND/node_modules/@deepseek-ai/dsh-client-ui-agent-preset/lib/client.js" << 'PYEOF'

@@ -201,7 +201,7 @@ window.__ModuleLoader__.load({
           {
             name: "settings.section",
             id: "updater",
-            order: 50,
+            order: 110, // last in the sidebar: the official cordis runner registers my-entry at 100
             label: () => "检查更新",
           },
           UpdaterSection,

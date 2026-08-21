@@ -1,9 +1,23 @@
-# Desktop-app overlay: dsh-vision — near-native image understanding for
-# text-only models. Replaces the official llm-deepseek adapter with a vision
-# bridge (vision model observes images, DeepSeek writes the answer); original
-# images still pass through natively when the main model supports them.
-- id: llm-deepseek
-  disabled: true
+# Desktop-app overlay: dsh-vision-router — eyes for text-only DeepSeek agents.
+#
+# `dsh-vision-router` (ysr666, v1.7.3) keeps the original pixels on the vision
+# model side and DeepSeek as the brain: a built-in free vision chain (OVHcloud
+# anonymous, key-less) + 14 pixel-level vision tools (ground / crop / pixel-diff
+# / colors / OCR / svg-trace / cutout / html-screenshot …). It does NOT take
+# over the official llm-deepseek row below — routing takeover is controlled by
+# the plugin's own「隐身模式」switch (off by default), per the package's
+# cordis.patch.yml. Rows below mirror that bundle layer verbatim.
 - insert:
-    - id: dsh-vision
-      name: "@oil-oil/dsh-vision"
+    - id: vision-router
+      name: 'dsh-vision-router'
+      config:
+        progressiveTools: false
+
+# Attachment product contract: host store accepts 20 MiB / 100 MP originals
+# with a 10000 px single-edge cap (covers 4K originals and long screenshots
+# without loosening the host's global safety gate).
+- id: attachment-local
+  config:
+    maxImageBytes: 20971520
+    maxImagePixels: 100000000
+    maxImageDimension: 10000

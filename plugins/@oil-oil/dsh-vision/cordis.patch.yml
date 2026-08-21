@@ -1,5 +1,0 @@
-- id: llm-deepseek
-  disabled: true
-- insert:
-    - id: dsh-vision
-      name: "@oil-oil/dsh-vision"

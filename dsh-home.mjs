@@ -9,7 +9,7 @@
  * directory before the backend boots.
  *
  * It also restores the bundled-plugin resolution contract: the profile patch
- * overlays (git/billing/updater/vision/skills/mcp/theme usage…) register
+ * overlays (git/updater/vision/skills/mcp/theme usage…) register
  * plugin packages that live inside the app backend's `node_modules`, not in
  * the user profile's dependency tree. The official machine reads those as bare
  * ESM imports from the profile directory, walking through
@@ -22,7 +22,6 @@ import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync, rmSync,
 import { mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 
 /** Directory name (under ~/Library/Application Support) holding app user data. */
 export const DESKTOP_DATA_DIR_NAME = "DeepSeekHarness";
@@ -135,11 +134,4 @@ export function linkBundledPlugins(backendDir, home) {
     linked++;
   }
   return linked;
-}
-
-/* Allow running directly to sanity-check home resolution and linking. */
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const home = resolveDesktopHome();
-  console.log(`desktop home (DSH_HOME): ${home}`);
-  console.log(`linked bundled plugins: ${linkBundledPlugins(process.argv[2] || dirname(fileURLToPath(import.meta.url)), home)}`);
 }
