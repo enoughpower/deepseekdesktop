@@ -292,7 +292,11 @@ const handlers = {
     }
     const result = await git(path, args);
     if (result.code !== 0) return fail("git-error", result.stderr || "git diff failed");
-    return ok({ text: result.stdout });
+    // Cap the payload so a huge diff cannot freeze transport/parse on the
+    // client (the UI renders diffs incrementally and shows the truncation).
+    const MAX_DIFF_BYTES = 2_000_000;
+    const truncated = Buffer.byteLength(result.stdout) > MAX_DIFF_BYTES;
+    return ok({ text: truncated ? result.stdout.slice(0, MAX_DIFF_BYTES) : result.stdout, truncated });
   },
 
   /** Stage files (git add). Accepts one file or a list; "." stages all. */
@@ -517,6 +521,37 @@ const handlers = {
     ]);
     if (result.code !== 0) return fail("git-error", result.stderr || "git show failed");
     return ok({ text: result.stdout });
+  },
+
+  /** List files changed by a commit (SourceTree-style: pick a file, then show
+   *  that file's diff). Parses `git show --name-status --format= <hash>`. */
+  async showFiles(payload) {
+    const path = requirePath(payload);
+    const hash = requireString(payload, "hash");
+    const result = await git(path, ["show", "--name-status", "--format=", hash]);
+    if (result.code !== 0) return fail("git-error", result.stderr || "git show --name-status failed");
+    const files = [];
+    for (const line of result.stdout.split("\n")) {
+      const m = line.match(/^([MADRCU])(\d+)?\t(.+?)(?:\t(.+))?$/);
+      if (m) {
+        // rename rows are "R<score>\t<old>\t<new>" — the new path is the file.
+        files.push(m[1] === "R" ? { status: "R", path: m[4], original: m[3] } : { status: m[1], path: m[3], original: m[4] });
+      }
+    }
+    return ok({ files });
+  },
+
+  /** Diff of ONE file inside a commit (`git show <hash> -- <file>`), capped so
+   *  a huge single-file change cannot freeze the client (UI virtualizes). */
+  async showFileDiff(payload) {
+    const path = requirePath(payload);
+    const hash = requireString(payload, "hash");
+    const file = requireString(payload, "file");
+    const result = await git(path, ["show", "--format=", hash, "--", file]);
+    if (result.code !== 0) return fail("git-error", result.stderr || "git show failed");
+    const MAX_DIFF_BYTES = 2_000_000;
+    const truncated = Buffer.byteLength(result.stdout) > MAX_DIFF_BYTES;
+    return ok({ text: truncated ? result.stdout.slice(0, MAX_DIFF_BYTES) : result.stdout, truncated });
   },
 
   async push(payload) {

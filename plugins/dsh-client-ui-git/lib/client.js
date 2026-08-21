@@ -18,19 +18,60 @@ window.__ModuleLoader__.load({
       // full-screen overlay panel
       ".dshGitOverlay{position:fixed;inset:0;z-index:1200;display:flex;flex-direction:column;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary)}",
       ".dshGitTop{flex:none;display:flex;align-items:center;gap:10px;height:48px;padding:0 16px;border-bottom:1px solid var(--dsw-alias-border-l2)}",
+      ".dshGitTopWrap{position:relative}",
+      ".dshGitBranchBtn{cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:5px}",
+      ".dshGitBranchBtn:hover{border-color:var(--dsw-alias-state-business-primary)}",
+      ".dshGitBranchActive{border-color:var(--dsw-alias-state-business-primary);color:var(--dsw-alias-state-business-primary)}",
+      ".dshGitBranchCaret{font-size:10px;opacity:.7}",
+      ".dshGitCommitOps{display:flex;align-items:center;gap:6px;flex:none}",
+      ".dshGitForkInput{width:150px;height:26px;font-size:12px}",
+      ".dshGitTopMenu{left:auto;right:10px;top:calc(100% - 1px);min-width:340px}",
       ".dshGitTopTitle{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--dsw-alias-label-primary);min-width:0}",
       ".dshGitBranch{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--dsw-alias-state-success-primary);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
       ".dshGitUpstream{color:var(--dsw-alias-label-tertiary);font-family:ui-monospace,Menlo,monospace;font-size:12px}",
       ".dshGitAhead{color:var(--dsw-alias-state-warn-primary);font-size:12px;font-weight:600}",
       ".dshGitBehind{color:var(--dsw-alias-state-error-primary);font-size:12px;font-weight:600}",
       ".dshGitPath{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-tertiary);font-family:ui-monospace,Menlo,monospace;font-size:12px;text-align:right}",
-      ".dshGitBody{flex:1;min-height:0;display:grid;grid-template-columns:300px minmax(320px,1fr) minmax(380px,1.3fr);grid-template-rows:minmax(0,1fr);gap:0;overflow:hidden;min-width:0}",
+      ".dshGitBody{flex:1;min-height:0;display:flex;flex-direction:column;gap:0;overflow:hidden;min-width:0}",
+      ".dshGitCol{display:flex;flex-direction:column;min-width:0;min-height:0;border-right:1px solid var(--dsw-alias-border-l2)}",
+      ".dshGitHistoryBand{flex:0 0 auto;max-height:42%;min-height:96px;display:flex;flex-direction:column;border-bottom:1px solid var(--dsw-alias-border-l2);overflow:hidden}",
+      ".dshGitLowerSplit{flex:1;min-height:0;display:flex;flex-direction:row;min-width:0}",
+      ".dshGitCommitBar{flex:none;display:flex;flex-direction:row;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);min-width:0}",
+      ".dshGitCommitBar .dshGitInput{flex:1;min-width:0;height:30px;font-size:12px}",
+      ".dshGitIconBtn{width:30px;height:30px;flex:none;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);cursor:pointer;padding:0}",
+      ".dshGitIconBtn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}",
+      ".dshGitIconBtn:disabled{opacity:.4;cursor:not-allowed}",
+      ".dshGitIconBtnPrimary{color:var(--dsw-alias-state-business-primary);border-color:var(--dsw-alias-state-business-primary)}",
+      ".dshGitCommitMsg{display:flex;flex-direction:column;gap:2px;min-width:0;max-width:40%;max-height:80px;overflow:auto}",
+      ".dshGitCommitMsg .dshGitOut,.dshGitCommitMsg .dshGitErr{margin:0;font-size:11px;max-height:none}",
+      ".dshGitResizeHandle{flex:none;height:6px;cursor:ns-resize;position:relative}",
+      ".dshGitResizeHandle::after{content:\"\";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:36px;height:3px;border-radius:2px;background:var(--dsw-alias-border-l2)}",
+      ".dshGitResizeHandle:hover::after{background:var(--dsw-alias-state-business-primary)}",
+      ".dshGitBranchWrap{position:relative;flex:none;min-width:0}",
+      ".dshGitBranchEmpty{flex:none;color:var(--dsw-alias-label-tertiary);font-size:12px;padding:0 4px}",
+      ".dshGitMoreChip{flex:none;display:inline-flex;align-items:center;gap:3px;height:24px;padding:0 9px;border:1px dashed var(--dsw-alias-border-l2);border-radius:999px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);font-size:12px;cursor:pointer;white-space:nowrap}",
+      ".dshGitMoreChip:hover{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-state-business-primary)}",
+      ".dshGitBranchMenu{position:absolute;top:calc(100% - 1px);left:10px;right:10px;z-index:60;display:flex;flex-direction:column;gap:8px;padding:10px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);border-radius:10px;box-shadow:var(--dsw-shadow-lv3);max-height:280px;overflow:auto}",
+      ".dshGitBranchMenuList{display:flex;flex-wrap:wrap;gap:6px}",
+      ".dshGitBranchMenuActions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--dsw-alias-border-l1);padding-top:8px}",
+      ".dshGitBranchMenuActions .dshGitInput{width:140px;height:26px;font-size:12px}",
+      ".dshGitBranchGroupLabel{flex:none;font-size:11px;color:var(--dsw-alias-label-tertiary);margin:0 2px 0 8px;text-transform:uppercase;letter-spacing:.4px}",
+      ".dshGitBranchChip{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:999px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);font-family:ui-monospace,Menlo,monospace;font-size:12px;white-space:nowrap;flex:none}",
+      ".dshGitBranchChipCurrent{color:var(--dsw-alias-state-business-primary);border-color:var(--dsw-alias-state-business-primary)}",
+      ".dshGitBranchChipRemote{opacity:.75}",
+      ".dshGitBranchChipDot{font-size:8px;color:var(--dsw-alias-state-business-primary)}",
+      ".dshGitBranchChipName{max-width:180px;overflow:hidden;text-overflow:ellipsis}",
+      ".dshGitBranchChip .dshGitMiniBtn{background:0 0;border:none;color:inherit;cursor:pointer;font-size:11px;padding:0 2px;line-height:1}",
+      ".dshGitBranchChip .dshGitMiniBtnDanger:hover{color:var(--dsw-alias-state-error-primary)}",
       ".dshGitCol{display:flex;flex-direction:column;min-width:0;min-height:0;border-right:1px solid var(--dsw-alias-border-l2)}",
       ".dshGitCol:last-child{border-right:none}",
       ".dshGitSection{display:flex;flex-direction:column;gap:8px;min-height:0;padding:12px 12px 8px;border-bottom:1px solid var(--dsw-alias-border-l2)}",
       ".dshGitSection:last-child{border-bottom:none;flex:1}",
       ".dshGitSectionFlex{flex:1;min-height:0}",
       ".dshGitSection h4{margin:0;font-size:12px;font-weight:600;color:var(--dsw-alias-label-secondary);display:flex;align-items:center;gap:6px;flex:none}",
+      ".dshGitHistoryOps{display:flex;align-items:center;gap:6px;flex:none}",
+      ".dshGitBranchFrom{display:flex;gap:6px;align-items:center;flex:none}",
+      ".dshGitBranchFrom .dshGitInput{width:230px;height:26px;font-size:12px}",
       ".dshGitList{list-style:none;margin:0;padding:0;overflow:auto;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-1);flex:1;min-height:0}",
       ".dshGitList li{display:flex;align-items:center;gap:8px;padding:5px 8px;border-bottom:1px solid var(--dsw-alias-border-l1)}",
       ".dshGitList li:last-child{border-bottom:none}",
@@ -50,6 +91,10 @@ window.__ModuleLoader__.load({
       ".dshGitErr{color:var(--dsw-alias-state-error-primary);font-size:12px;white-space:pre-wrap;word-break:break-all;max-height:120px;overflow:auto}",
       ".dshGitRow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}",
       ".dshGitTextarea{width:100%;box-sizing:border-box;resize:vertical;min-height:64px;padding:8px;border-radius:8px;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font-family:inherit;font-size:13px}",
+      ".dshGitCommitBar .dshGitTextarea{min-height:34px;max-height:90px}",
+      ".dshGitCommitBar .dshGitRow{gap:8px}",
+      ".dshGitCommitBar .dshGitOut{margin:0;max-height:80px}",
+      ".dshGitCommitBar .dshGitErr{margin:0;max-height:80px}",
       ".dshGitTextarea:focus{outline:none;border-color:var(--dsw-alias-state-business-primary)}",
       ".dshGitInput{box-sizing:border-box;width:100%;height:30px;padding:0 8px;border-radius:8px;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font-family:inherit;font-size:12px}",
       ".dshGitInput:focus{outline:none;border-color:var(--dsw-alias-state-business-primary)}",
@@ -76,6 +121,24 @@ window.__ModuleLoader__.load({
       ".dshGitDiffRowDel .dshGitContent{color:color-mix(in srgb,var(--dsw-alias-state-error-primary,#e5484d) 65%,var(--dsw-alias-label-primary,#111827))}",
       ".dshGitDiffRowHunk{background:var(--dsw-alias-bg-layer-2);border-top:1px solid var(--dsw-alias-border-l1);border-bottom:1px solid var(--dsw-alias-border-l1)}",
       ".dshGitDiffRowHunk .dshGitContent{color:var(--dsw-alias-state-business-primary);font-weight:600;padding-left:8px}",
+      ".dshGitDiffLoading{position:sticky;top:0;z-index:5;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);font-size:12px;line-height:18px;padding:4px 10px;border-bottom:1px solid var(--dsw-alias-border-l1);font-family:ui-monospace,Menlo,monospace}",
+      // Virtual-scroll diff: fixed-height rows, single-line content with
+      // ellipsis so long lines and 30k-row diffs scroll smoothly.
+      // Virtual-scroll diff: fixed-height rows pinned to the container width.
+      // Virtual-scroll diff: the row width is driven by its content
+      // (max-content) so long lines stay readable and the add/delete color
+      // block stretches across the FULL row width; the container scrolls
+      // horizontally when a line is wider than the pane. `flex:none` on the
+      // content keeps the width computation exact (flex:1 inside a
+      // max-content flex row would compress the text and clip line numbers).
+      ".dshGitDiffVirtual .dshGitDiffRow{align-items:stretch;width:100%}",
+      ".dshGitDiffVirtual .dshGitContent{flex:none;white-space:pre;overflow:visible;line-height:19px}",
+      ".dshGitDiffVirtual .dshGitGutter{line-height:19px}",
+      ".dshGitDiffVirtual .dshGitDiffRowHunk .dshGitContent{line-height:19px}",
+      ".dshGitDiffVFile{background:var(--dsw-alias-bg-layer-2);border-bottom:1px solid var(--dsw-alias-border-l1);align-items:center;gap:6px;padding:0 8px;flex:none}",
+      ".dshGitDiffVFile .dshGitDiffFileDot{line-height:19px}",
+      ".dshGitDiffVFile .dshGitDiffFileName{color:var(--dsw-alias-label-primary);font-weight:600;line-height:19px}",
+      ".dshGitDiffVFile .dshGitDiffFileBadge{line-height:14px}",
       // branch manager
       ".dshGitBranchItem{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;padding:6px 8px;border:none;border-radius:6px;background:transparent;color:var(--dsw-alias-label-primary);font-family:ui-monospace,Menlo,monospace;font-size:12px;cursor:pointer;text-align:left}",
       ".dshGitBranchItem:hover{background:var(--dsw-alias-interactive-bg-hover)}",
@@ -209,47 +272,123 @@ window.__ModuleLoader__.load({
       return files;
     }
 
+    const DIFF_ROW_H = 19;
+    const DIFF_OVERSCAN = 24;
+
     function DiffView({ text }) {
       if (!text) return jsx("div", { className: "dshGitEmpty", children: "无差异" });
-      const files = parseDiffText(text);
+      const files = react.useMemo(() => parseDiffText(text), [text]);
       if (files.length === 0) return jsx("div", { className: "dshGitEmpty", children: "无差异" });
+      // Flatten into fixed-height render units (file header / hunk header /
+      // diff line). A virtual window then renders ONLY the visible rows, so a
+      // 100-file / 30k-line diff scrolls smoothly instead of mounting every
+      // row (SourceTree-style: one file's diff at a time, virtualized rows).
+      const units = react.useMemo(() => {
+        const out = [];
+        // Track the widest row (in display columns; wide CJK chars count as 2)
+        // so every row box stretches to the SAME width as the longest line —
+        // the whole diff reads as one uniform code block with scrolling.
+        let maxW = 0;
+        const note = (s) => {
+          let w = 0;
+          for (const ch of s) w += /[\u4e00-\u9fff\uff00-\uffef\u3000-\u303f]/.test(ch) ? 2 : 1;
+          if (w > maxW) maxW = w;
+        };
+        for (const f of files) {
+          const binary = f.meta.some((l) => l.startsWith("Binary files"));
+          const renamed = f.oldName !== f.newName && f.oldName !== "/dev/null" && f.newName !== "/dev/null";
+          out.push({ kind: "file", f, binary, renamed });
+          note(f.newName || f.oldName);
+          if (!binary && f.hunks.length > 0) {
+            for (const h of f.hunks) {
+              out.push({ kind: "hunk", h });
+              note(h.ok && h.lines[0].content ? h.lines[0].content : "");
+              for (const l of h.lines.slice(1)) { out.push({ kind: "line", l }); note(l.content); }
+            }
+          } else if (!binary) {
+            out.push({ kind: "meta" });
+          }
+        }
+        return { units: out, maxW };
+      }, [files]);
+      const { units: rows, maxW } = units;
+      // Monospace (12px) char width ~0.6em ≈ 7.2px; 2 gutters (34px each) +
+      // widest row + small pad. Row boxes stretch to this width so the green/
+      // red change block is one uniform code-block column, scrolling past it.
+      const diffWidth = 68 + maxW * 7.2 + 16;
+      const boxRef = react.useRef(null);
+      const [scrollTop, setScrollTop] = react.useState(0);
+      const [viewportH, setViewportH] = react.useState(0);
+      react.useLayoutEffect(() => {
+        const el = boxRef.current;
+        if (!el) return;
+        const update = () => setViewportH(el.clientHeight);
+        update();
+        if (typeof ResizeObserver !== "undefined") {
+          const ro = new ResizeObserver(update);
+          ro.observe(el);
+          return () => ro.disconnect();
+        }
+        window.addEventListener("resize", update);
+        return () => window.removeEventListener("resize", update);
+      }, []);
       const fmtCount = (n) => (n === 1 ? "" : "," + n);
-      return jsx("div", { className: "dshGitDiff", children: files.map((f, fi) => {
-        const binary = f.meta.some((l) => l.startsWith("Binary files"));
-        const renamed = f.oldName !== f.newName && f.oldName !== "/dev/null" && f.newName !== "/dev/null";
-        return jsxs("div", { key: "f" + fi, className: "dshGitDiffFile", children: [
-          jsxs("div", { className: "dshGitDiffFileHead", children: [
+      const totalH = rows.length * DIFF_ROW_H;
+      const start = Math.max(0, Math.floor(scrollTop / DIFF_ROW_H) - DIFF_OVERSCAN);
+      const end = Math.min(rows.length, Math.ceil((scrollTop + viewportH) / DIFF_ROW_H) + DIFF_OVERSCAN);
+      const visible = rows.slice(start, end);
+      const rowClass = (u) => {
+        if (u.kind === "file") return "dshGitDiffRow dshGitDiffVFile";
+        if (u.kind === "hunk") return "dshGitDiffRow dshGitDiffRowHunk";
+        if (u.kind === "meta") return "dshGitDiffRow dshGitDiffMeta";
+        if (u.l.t === "add") return "dshGitDiffRow dshGitDiffRowAdd";
+        if (u.l.t === "del") return "dshGitDiffRow dshGitDiffRowDel";
+        return "dshGitDiffRow";
+      };
+      const rowContent = (u) => {
+        if (u.kind === "file") {
+          const f = u.f;
+          return [
             jsx("span", { className: "dshGitDiffFileDot", children: "\u25CF" }),
             jsx("span", { className: "dshGitDiffFileName", title: f.newName || f.oldName, children: (f.newName && f.newName !== "/dev/null" ? f.newName : f.oldName) }),
-            renamed ? jsx("span", { className: "dshGitDiffFileBadge", children: "重命名" }) : null,
+            u.renamed ? jsx("span", { className: "dshGitDiffFileBadge", children: "重命名" }) : null,
             f.oldName === "/dev/null" ? jsx("span", { className: "dshGitDiffFileBadge dshGitDiffFileBadgeNew", children: "新增" }) : null,
             f.newName === "/dev/null" ? jsx("span", { className: "dshGitDiffFileBadge dshGitDiffFileBadgeDel", children: "删除" }) : null,
-            binary ? jsx("span", { className: "dshGitDiffFileBadge", children: "二进制" }) : null,
-          ] }),
-          binary
-            ? jsx("div", { className: "dshGitDiffLine dshGitDiffMeta", children: [jsx("span", { className: "dshGitContent", children: f.meta.find((l) => l.startsWith("Binary files")) || "二进制文件" }) ] })
-            : f.hunks.length === 0
-              ? jsx("div", { className: "dshGitDiffLine dshGitDiffMeta", children: [jsx("span", { className: "dshGitContent", children: "（无内容变更）" }) ] })
-              : f.hunks.map((h, hi) => {
-                  const section = h.ok && h.lines[0].content ? " " + h.lines[0].content : "";
-                  return jsxs(Fragment, { key: "h" + hi, children: [
-                    jsx("div", { className: "dshGitDiffRow dshGitDiffRowHunk", children: [
-                      jsx("span", { className: "dshGitContent", children: h.ok ? "@@ -" + h.oldStart + fmtCount(h.oldCount) + " +" + h.newStart + fmtCount(h.newCount) + " @@" + section : h.lines[0].content }),
-                    ] }),
-                    ...h.lines.slice(1).map((l, li) => {
-                      let cls = "dshGitDiffRow";
-                      if (l.t === "add") cls += " dshGitDiffRowAdd";
-                      else if (l.t === "del") cls += " dshGitDiffRowDel";
-                      return jsxs("div", { key: "l" + li, className: cls, children: [
-                        jsx("span", { className: "dshGitGutter", children: l.oldLn ?? "" }),
-                        jsx("span", { className: "dshGitGutter", children: l.newLn ?? "" }),
-                        jsx("span", { className: "dshGitContent", children: l.content === "" ? " " : l.content }),
-                      ] });
-                    }),
-                  ] });
-                }),
-        ] });
-      }) });
+            u.binary ? jsx("span", { className: "dshGitDiffFileBadge", children: "二进制" }) : null,
+          ];
+        }
+        if (u.kind === "hunk") {
+          const h = u.h;
+          const section = h.ok && h.lines[0].content ? " " + h.lines[0].content : "";
+          return jsx("span", { className: "dshGitContent", children: h.ok ? "@@ -" + h.oldStart + fmtCount(h.oldCount) + " +" + h.newStart + fmtCount(h.newCount) + " @@" + section : h.lines[0].content });
+        }
+        if (u.kind === "meta") {
+          return jsx("span", { className: "dshGitContent", children: "（无内容变更）" });
+        }
+        const l = u.l;
+        return [
+          jsx("span", { className: "dshGitGutter", children: l.oldLn ?? "" }),
+          jsx("span", { className: "dshGitGutter", children: l.newLn ?? "" }),
+          jsx("span", { className: "dshGitContent", children: l.content === "" ? " " : l.content }),
+        ];
+      };
+      return jsx("div", {
+        ref: boxRef,
+        className: "dshGitDiff dshGitDiffVirtual",
+        onScroll: (e) => setScrollTop(e.currentTarget.scrollTop),
+        children: jsx("div", {
+          style: { height: totalH, position: "relative", width: Math.max(diffWidth, 100), minWidth: "100%" },
+          children: visible.map((u, i) => {
+            const top = (start + i) * DIFF_ROW_H;
+            return jsx("div", {
+              key: "v" + (start + i),
+              className: rowClass(u),
+              style: { position: "absolute", top, left: 0, right: 0, height: DIFF_ROW_H },
+              children: rowContent(u),
+            });
+          }),
+        }),
+      });
     }
 
     function FileView({ text }) {
@@ -331,16 +470,43 @@ window.__ModuleLoader__.load({
       const [output, setOutput] = react.useState("");
       const [message, setMessage] = react.useState("");
       const [diffFile, setDiffFile] = react.useState(null);
+      const diffFileRef = react.useRef(null);
       const [diffText, setDiffText] = react.useState("");
+      const [diffTruncated, setDiffTruncated] = react.useState(false);
       const [diffStaged, setDiffStaged] = react.useState(false);
       const [selectedCommit, setSelectedCommit] = react.useState(null);
+      const [commitFiles, setCommitFiles] = react.useState(null); // null = working-tree mode
+      const [commitFile, setCommitFile] = react.useState(null);
       const [selectedCommitText, setSelectedCommitText] = react.useState("");
+      const [commitDiffTruncated, setCommitDiffTruncated] = react.useState(false);
       const [rightTab, setRightTab] = react.useState("diff"); // diff | file | blame
+      // History band height (drag-resizable; leave room for the diff).
+      const [historyH, setHistoryH] = react.useState(140);
+      const historyDragRef = react.useRef(null);
+      const startHistoryDrag = (e) => {
+        e.preventDefault();
+        historyDragRef.current = { startY: e.clientY, startH: historyH };
+        const move = (ev) => {
+          if (!historyDragRef.current) return;
+          const h = historyDragRef.current.startH + (ev.clientY - historyDragRef.current.startY);
+          setHistoryH(Math.max(90, Math.min(Math.round(window.innerHeight * 0.55), h)));
+        };
+        const up = () => {
+          historyDragRef.current = null;
+          window.removeEventListener("mousemove", move);
+          window.removeEventListener("mouseup", up);
+        };
+        window.addEventListener("mousemove", move);
+        window.addEventListener("mouseup", up);
+      };
       const [fileViewText, setFileViewText] = react.useState("");
       const [fileViewHeadText, setFileViewHeadText] = react.useState("");
       const [fileLog, setFileLog] = react.useState([]);
       const [blameLines, setBlameLines] = react.useState([]);
-      const [showBranchManager, setShowBranchManager] = react.useState(false);
+      const [branchMenu, setBranchMenu] = react.useState(null); // null | "local" | "remote"
+      const [branchFromOpen, setBranchFromOpen] = react.useState(false);
+      const LOCAL_SHOW = 6;
+      const REMOTE_SHOW = 4;
       const [busy, setBusy] = react.useState(false);
       const [newBranchName, setNewBranchName] = react.useState("");
       const [mergeTarget, setMergeTarget] = react.useState("");
@@ -380,7 +546,7 @@ window.__ModuleLoader__.load({
         const [st, br, gr, cf] = await Promise.all([
           gitCall("status", { path: p }),
           gitCall("branches", { path: p }),
-          gitCall("graphLog", { path: p, n: 100 }),
+          gitCall("graphLog", { path: p, n: 500 }),
           gitCall("conflicts", { path: p }),
         ]);
         setLoading(false);
@@ -392,6 +558,19 @@ window.__ModuleLoader__.load({
           setStaged(st.value.staged);
           setUnstaged(st.value.unstaged);
           setUntracked(st.value.untracked);
+          // SourceTree-style: auto-select the first changed file so the diff
+          // pane shows one file immediately (untracked → show its content).
+          // Keeps the current selection when it is still in the list.
+          const allPaths = [...st.value.staged, ...st.value.unstaged, ...st.value.untracked].map((f) => f.path);
+          const keep = diffFileRef.current !== null && allPaths.includes(diffFileRef.current);
+          if (!keep) {
+            const staged0 = st.value.staged[0];
+            const unstaged0 = st.value.unstaged[0];
+            const untracked0 = st.value.untracked[0];
+            if (staged0) showDiff(staged0.path, true);
+            else if (unstaged0) showDiff(unstaged0.path, false);
+            else if (untracked0) showFile(untracked0.path);
+          }
         } else setError(st.error?.message || "git status failed");
         if (br.ok) setBranches(br.value.branches);
         if (gr.ok) setGraph(gr.value.rows);
@@ -406,17 +585,23 @@ window.__ModuleLoader__.load({
       // load workspace from the conversation context if available
       const showDiff = async (file, isStaged) => {
         setSelectedCommit(null); // 离开提交详情，回到文件 diff
+        setCommitFiles(null);
+        setCommitFile(null);
         setDiffFile(file);
+        diffFileRef.current = file;
         setDiffStaged(isStaged);
         setRightTab("diff");
         const r = await gitCall("diff", { path: activePath, file, staged: isStaged });
-        if (r.ok) setDiffText(r.value.text);
-        else { setDiffText(""); setError(r.error?.message); }
+        if (r.ok) { setDiffText(r.value.text); setDiffTruncated(r.value.truncated === true); setError(null); }
+        else { setDiffText(""); setDiffTruncated(false); setError(r.error?.message); }
       };
 
       const showFile = async (file) => {
         setSelectedCommit(null); // 离开提交详情，回到文件对比
+        setCommitFiles(null);
+        setCommitFile(null);
         setDiffFile(file);
+        diffFileRef.current = file;
         setRightTab("file");
         const [work, head, flog, bl] = await Promise.all([
           gitCall("catFile", { path: activePath, file, workingTree: true }),
@@ -433,10 +618,74 @@ window.__ModuleLoader__.load({
       const showCommit = async (hash) => {
         setSelectedCommit(hash);
         setRightTab("diff");
-        const r = await gitCall("showStat", { path: activePath, hash });
-        if (r.ok) setSelectedCommitText(r.value.text);
-        else setSelectedCommitText("");
+        setCommitFile(null);
+        setSelectedCommitText("");
+        const r = await gitCall("showFiles", { path: activePath, hash });
+        if (r.ok) {
+          setCommitFiles(r.value.files);
+          const first = r.value.files[0];
+          if (first) showCommitFile(hash, first.path);
+        } else {
+          setCommitFiles([]);
+          setError(r.error?.message);
+        }
       };
+
+      const showCommitFile = async (hash, file) => {
+        setCommitFile(file);
+        setRightTab("diff");
+        const r = await gitCall("showFileDiff", { path: activePath, hash, file });
+        if (r.ok) { setSelectedCommitText(r.value.text); setCommitDiffTruncated(r.value.truncated === true); setError(null); }
+        else { setSelectedCommitText(""); setCommitDiffTruncated(false); setError(r.error?.message); }
+      };
+
+      const exitCommitView = () => {
+        setSelectedCommit(null);
+        setCommitFiles(null);
+        setCommitFile(null);
+        setSelectedCommitText("");
+        setRightTab("diff");
+        diffFileRef.current = diffFile;
+      };
+
+      const commitFileRow = (f) => jsxs("li", {
+        key: f.path,
+        className: commitFile === f.path ? "dshGitSelected" : "",
+        children: [
+          jsx("span", { className: "dshGitCode " + changeClass(f.status, false), children: f.status }),
+          jsx("button", { type: "button", title: f.path + (f.original ? " \u2190 " + f.original : ""), onClick: () => showCommitFile(selectedCommit, f.path), children: f.path }),
+        ],
+      });
+
+      const branchChip = (b, isRemote) => jsxs("span", {
+        key: b.name,
+        className: "dshGitBranchChip" + (b.current ? " dshGitBranchChipCurrent" : "") + (isRemote ? " dshGitBranchChipRemote" : ""),
+        title: (b.subject ? b.subject + "\n" : "") + b.hash,
+        children: [
+          b.current ? jsx("span", { className: "dshGitBranchChipDot", children: "\u25CF" }) : null,
+          jsx("span", { className: "dshGitBranchChipName", children: b.name }),
+          b.ahead > 0 || b.behind > 0 ? jsx("span", { className: "dshGitBranchTrack", children: "\u2191" + b.ahead + " \u2193" + b.behind }) : null,
+          !isRemote && !b.current ? jsx("button", { className: "dshGitMiniBtn", title: "切换到此分支", onClick: () => runMutation("switchBranch", { name: b.name }), children: "\u21E5" }) : null,
+          !isRemote ? jsx("button", { className: "dshGitMiniBtn", title: "重命名", onClick: () => renameBranch(b.name), children: "\u270E" }) : null,
+          !isRemote && !b.current ? jsx("button", { className: "dshGitMiniBtn dshGitMiniBtnDanger", title: "删除", onClick: () => setConfirmDelete(b.name), children: "\u2715" }) : null,
+        ],
+      });
+
+      const GIT_ICONS = {
+        check: '<path d="M4 8.5l2.5 2.5L12 6" />',
+        edit: '<path d="M5 11.2l.8-2.2L11 3.6 12.4 5 7 10.4l-2.2.8z" />',
+        up: '<path d="M8 3l4 4h-2.5v5h-3V7H4z" />',
+        down: '<path d="M8 13l-4-4h2.5V4h3v5H12z" />',
+        refresh: '<path d="M13 8a5 5 0 1 1-1.5-3.6M13 3v2.5H10.5" />',
+      };
+      const gitIconBtn = (onClick, title, icon, disabled, primary) => jsx("button", {
+        type: "button",
+        className: "dshGitIconBtn" + (primary ? " dshGitIconBtnPrimary" : ""),
+        title,
+        disabled,
+        onClick,
+        children: jsx("svg", { width: 14, height: 14, viewBox: "0 0 16 16", fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round", dangerouslySetInnerHTML: { __html: GIT_ICONS[icon] } }),
+      });
 
       const runMutation = async (op, payload, thenRefresh = true) => {
         setBusy(true);
@@ -475,12 +724,15 @@ window.__ModuleLoader__.load({
       };
 
       // branch actions
-      const createBranch = async () => {
+      const createBranch = async (baseRef) => {
         const name = newBranchName.trim();
         if (!name) return;
-        await runMutation("newBranch", { name, switch: true });
+        // Fork from the selected history commit when requested (SourceTree
+        // "branch from this commit"): create without switching. Otherwise the
+        // plain "new branch" flow creates AND switches to the new branch.
+        await runMutation("newBranch", { name, base: baseRef || undefined, switch: baseRef ? false : true });
         setNewBranchName("");
-        setShowBranchManager(false);
+        setBranchFromOpen(false);
       };
       const deleteBranch = async (name) => {
         setConfirmDelete(null);
@@ -505,7 +757,7 @@ window.__ModuleLoader__.load({
         const menuOpen = menuFor === f.path;
         return jsxs("li", {
           key: (isStaged ? "s" : "u") + f.path + f.status,
-          className: diffFile === f.path && rightTab === "diff" && diffStaged === isStaged ? "dshGitSelected" : "",
+          className: diffFile === f.path && diffStaged === isStaged ? "dshGitSelected" : "",
           children: [
             jsx("input", {
               type: "checkbox",
@@ -683,8 +935,12 @@ window.__ModuleLoader__.load({
         // diff tab
         if (selectedCommit) {
           return jsxs(Fragment, { children: [
-            jsx("div", { className: "dshGitToolbar", children: [jsx("span", { className: "dshGitUpstream", children: "提交 " + selectedCommit.slice(0, 7) }) ] }),
-            jsx("div", { className: "dshGitDiffOuter", children: selectedCommitText ? jsx(DiffView, { text: selectedCommitText }) : jsx("div", { className: "dshGitEmpty", children: "加载中…" }) }),
+            jsx("div", { className: "dshGitToolbar", children: [
+              jsx("span", { className: "dshGitUpstream", children: "提交 " + selectedCommit.slice(0, 7) }),
+              commitFile ? jsx("span", { className: "dshGitUpstream", children: commitFile }) : null,
+            ] }),
+            commitDiffTruncated ? jsx("div", { className: "dshGitDiffLoading", children: "差异过大，已显示截断内容（前 2 MB）" }) : null,
+            jsx("div", { className: "dshGitDiffOuter", children: selectedCommitText ? jsx(DiffView, { text: selectedCommitText }) : jsx("div", { className: "dshGitEmpty", children: commitFiles && commitFiles.length === 0 ? "该提交无文件变更" : "加载中…" }) }),
           ] });
         }
         return jsxs(Fragment, { children: [
@@ -694,21 +950,43 @@ window.__ModuleLoader__.load({
           ] }) : null,
           diffText === "" && !diffFile
             ? jsx("div", { className: "dshGitEmpty", children: "点击左侧文件查看差异，或点击历史中的提交查看详情" })
-            : jsx(DiffView, { text: diffText }),
+            : jsxs(Fragment, { children: [
+                diffTruncated ? jsx("div", { className: "dshGitDiffLoading", children: "差异过大，已显示截断内容（前 2 MB）" }) : null,
+                jsx(DiffView, { text: diffText }),
+              ] }),
         ] });
       };
 
       return jsxs("div", { className: "dshGitRoot dshGitView", "data-git-view": true, children: [
-        jsxs("div", { className: "dshGitTop", children: [
+        jsxs("div", { className: "dshGitTop dshGitTopWrap", children: [
           jsx("span", { className: "dshGitTopTitle", children: [
             jsx(primitives.IconBranchOutline16, { size: 18 }),
             "Git",
           ] }),
-          branch ? jsx("span", { className: "dshGitBranch", children: [jsx(primitives.IconBranchOutline16, { size: 14 }), branch] }) : null,
+          branch
+            ? jsx("span", { className: "dshGitBranch dshGitBranchBtn" + (branchMenu === "top" ? " dshGitBranchActive" : ""), onClick: () => setBranchMenu(branchMenu === "top" ? null : "top"), title: "分支管理（点击切换/新建/合并）", children: [
+                jsx(primitives.IconBranchOutline16, { size: 14 }),
+                branch,
+                jsx("span", { className: "dshGitBranchCaret", children: "\u25BE" }),
+              ] })
+            : null,
           upstream ? jsx("span", { className: "dshGitUpstream", children: upstream }) : null,
-          ahead > 0 ? jsx("span", { className: "dshGitAhead", children: "↑" + ahead }) : null,
-          behind > 0 ? jsx("span", { className: "dshGitBehind", children: "↓" + behind }) : null,
-          conflicts.length > 0 ? jsx("span", { className: "dshGitErr", children: "⚠ " + conflicts.length + " 个冲突文件" }) : null,
+          ahead > 0 ? jsx("span", { className: "dshGitAhead", children: "\u2191" + ahead }) : null,
+          behind > 0 ? jsx("span", { className: "dshGitBehind", children: "\u2193" + behind }) : null,
+          conflicts.length > 0 ? jsx("span", { className: "dshGitErr", children: "\u26A0 " + conflicts.length + " 个冲突文件" }) : null,
+          selectedCommit
+            ? jsxs("span", { className: "dshGitCommitOps", children: [
+                jsx("span", { className: "dshGitUpstream", children: selectedCommit.slice(0, 7) }),
+                jsx(primitives.Button, { variant: "ghost", size: "xs", onClick: () => setBranchFromOpen((v) => !v), children: branchFromOpen ? "收起" : "fork" }),
+                branchFromOpen
+                  ? jsxs(Fragment, { children: [
+                      jsx("input", { className: "dshGitInput dshGitForkInput", placeholder: "新分支名", value: newBranchName, onChange: (e) => setNewBranchName(e.target.value), onKeyDown: (e) => { if (e.key === "Enter") createBranch(selectedCommit); } }),
+                      jsx(primitives.Button, { variant: "primary", size: "xs", onClick: () => createBranch(selectedCommit), disabled: !newBranchName.trim() || busy, children: "创建" }),
+                    ] })
+                  : null,
+                jsx(primitives.Button, { variant: "ghost", size: "xs", onClick: () => doMerge(selectedCommit), disabled: busy, title: "把选中的提交合并到当前分支", children: "merge" }),
+              ] })
+            : null,
           jsx("input", {
             className: "dshGitInput",
             style: { width: "220px", flex: "none", fontSize: "11px" },
@@ -719,41 +997,60 @@ window.__ModuleLoader__.load({
             onKeyDown: (e) => { if (e.key === "Enter" && pathInput.trim()) { setCwd(pathInput.trim()); refresh(pathInput.trim()); } },
           }),
           jsx(primitives.Button, { variant: "outline", size: "sm", onClick: () => { if (pathInput.trim()) { setCwd(pathInput.trim()); refresh(pathInput.trim()); } }, disabled: !pathInput.trim() || loading, children: "加载" }),
-          jsx(primitives.Button, { variant: "outline", size: "sm", onClick: () => setShowBranchManager((v) => !v), children: showBranchManager ? "收起分支" : "分支管理" }),
           jsx(primitives.Button, { variant: "outline", size: "sm", onClick: () => refresh(), disabled: loading, children: loading ? "刷新中…" : "刷新" }),
-        ] }),
-        jsxs("div", { className: "dshGitBody", children: [
-          // ── left column: branches + file changes ──
-          jsxs("div", { className: "dshGitCol", children: [
-            showBranchManager ? jsx("div", { className: "dshGitSection", children: [
-              jsx("h4", { children: "分支管理" }),
-              jsx("div", { className: "dshGitRow", children: [
-                jsx("input", { className: "dshGitInput", placeholder: "新分支名", value: newBranchName, onChange: (e) => setNewBranchName(e.target.value), onKeyDown: (e) => { if (e.key === "Enter") createBranch(); } }),
-                jsx(primitives.Button, { variant: "primary", size: "sm", onClick: createBranch, disabled: !newBranchName.trim() || busy, children: "新建" }),
-              ] }),
-              jsx("div", { className: "dshGitRow", children: [
-                jsx("select", { className: "dshGitInput", value: mergeTarget, onChange: (e) => setMergeTarget(e.target.value), children: [
-                  jsx("option", { value: "", children: "选择要合并的分支…" }),
-                  ...branches.filter((b) => !b.remote && !b.current).map((b) => jsx("option", { key: b.name, value: b.name, children: b.name })),
+          branchMenu === "top"
+            ? jsx("div", { className: "dshGitBranchMenu dshGitTopMenu", children: [
+                jsxs("div", { className: "dshGitBranchMenuList", children: [
+                  jsx("span", { className: "dshGitBranchGroupLabel", children: "本地" }),
+                  branches.filter((b) => !b.remote).map((b) => branchChip(b, false)),
+                  jsx("span", { className: "dshGitBranchGroupLabel", children: "远程" }),
+                  branches.filter((b) => b.remote).map((b) => branchChip(b, true)),
                 ] }),
-                jsx(primitives.Button, { variant: "outline", size: "sm", onClick: () => doMerge(mergeTarget), disabled: !mergeTarget || busy, children: "合并" }),
-              ] }),
-              jsx("div", { className: "dshGitBranchBox", children: branches.length === 0
-                ? jsx("div", { className: "dshGitEmpty", children: "暂无分支" })
-                : branches.map((b) => jsxs("div", {
-                    key: b.name,
-                    className: "dshGitBranchItem" + (b.current ? " dshGitBranchItemCurrent" : "") + (b.remote ? " dshGitBranchItemRemote" : ""),
-                    children: [
-                      jsx("button", { type: "button", style: { flex: 1, textAlign: "left", border: "none", background: "transparent", color: "inherit", cursor: "pointer", font: "inherit" }, onClick: () => b.current ? null : runMutation("switchBranch", { name: b.name }), children: b.name }),
-                      b.ahead > 0 || b.behind > 0 ? jsx("span", { className: "dshGitBranchTrack", children: "↑" + b.ahead + " ↓" + b.behind }) : null,
-                      !b.remote ? jsx("span", { className: "dshGitBranchActions", children: [
-                        jsx("button", { className: "dshGitMiniBtn", type: "button", title: "重命名", onClick: () => renameBranch(b.name), children: "改名" }),
-                        b.current ? null : jsx("button", { className: "dshGitMiniBtn dshGitMiniBtnDanger", type: "button", title: "删除", onClick: () => setConfirmDelete(b.name), children: "删除" }),
-                      ] }) : null,
-                    ],
-                  })),
-                }),
-              ] }) : null,
+                jsxs("div", { className: "dshGitBranchMenuActions", children: [
+                  jsx("input", { className: "dshGitInput", placeholder: "新分支名（从 HEAD 创建并切换）", value: newBranchName, onChange: (e) => setNewBranchName(e.target.value), onKeyDown: (e) => { if (e.key === "Enter") createBranch(); } }),
+                  jsx(primitives.Button, { variant: "primary", size: "xs", onClick: () => createBranch(), disabled: !newBranchName.trim() || busy, children: "新建" }),
+                  jsx("select", { className: "dshGitInput", value: mergeTarget, onChange: (e) => setMergeTarget(e.target.value), children: [
+                    jsx("option", { value: "", children: "合并分支…" }),
+                    ...branches.filter((b) => !b.remote && !b.current).map((b) => jsx("option", { key: b.name, value: b.name, children: b.name })),
+                  ] }),
+                  jsx(primitives.Button, { variant: "outline", size: "xs", onClick: () => doMerge(mergeTarget), disabled: !mergeTarget || busy, children: "合并" }),
+                ] }),
+              ] })
+            : null,
+        ] }),        jsxs("div", { className: "dshGitBody", children: [
+          // ── history band: full width ──
+          jsxs("div", { className: "dshGitHistoryBand", style: { height: historyH }, children: [
+            jsxs("div", { className: "dshGitSection dshGitSectionFlex", style: { flex: 1, minHeight: 0 }, children: [
+              jsx("h4", { children: "历史（点击提交查看详情）" }),
+              graph.length === 0
+                ? jsx("div", { className: "dshGitEmpty", children: "暂无提交" })
+                : jsx("div", { className: "dshGitGraph", children: jsxs("div", { className: "dshGitGraphInner", children: [
+                    graphSvg,
+                    ...graphRows,
+                  ] }) }),
+            ] }),
+            jsx("div", { className: "dshGitResizeHandle", title: "拖动调整历史区高度", onMouseDown: startHistoryDrag }),
+          ] }),
+          // ── branch strip: local / remote, right below history ──
+          // ── lower split: file changes (left) + diff (right) ──          // ── lower split: file changes (left) + diff (right) ──
+          jsxs("div", { className: "dshGitLowerSplit", children: [
+jsxs("div", { className: "dshGitCol", style: { width: 300, flex: "0 0 300px" }, children: [
+            commitFiles !== null
+              ? jsxs(Fragment, { children: [
+                  jsx("div", { className: "dshGitSection", children: [
+                    jsx("h4", { children: [jsx(primitives.IconBranchOutline16, { size: 14 }), " 提交 " + (selectedCommit || "").slice(0, 7)] }),
+                    jsx("div", { className: "dshGitRow", children: [
+                      jsx(primitives.Button, { variant: "outline", size: "sm", onClick: exitCommitView, children: "返回工作区" }),
+                    ] }),
+                  ] }),
+                  jsxs("div", { className: "dshGitSection dshGitSectionFlex", children: [
+                    jsx("h4", { children: "变更文件（" + (commitFiles ? commitFiles.length : 0) + "）" }),
+                    commitFiles === null || commitFiles.length === 0
+                      ? jsx("div", { className: "dshGitEmpty", children: "该提交无文件变更" })
+                      : jsx("ul", { className: "dshGitList", children: commitFiles.map((f) => commitFileRow(f)) }),
+                  ] }),
+                ] })
+              : jsxs(Fragment, { children: [
             jsxs("div", { className: "dshGitSection dshGitSectionFlex", children: [
               jsx("h4", { children: "已暂存（" + staged.length + "）" }),
               staged.length === 0
@@ -788,43 +1085,38 @@ window.__ModuleLoader__.load({
                   ] }),
             ] }),
           ] }),
-          // ── center column: history (top, fills) + commit (bottom) ──
-          jsxs("div", { className: "dshGitCol", children: [
-            jsxs("div", { className: "dshGitSection dshGitSectionFlex", children: [
-              jsx("h4", { children: "历史（点击提交查看详情）" }),
-              graph.length === 0
-                ? jsx("div", { className: "dshGitEmpty", children: "暂无提交" })
-                : jsx("div", { className: "dshGitGraph", children: jsxs("div", { className: "dshGitGraphInner", children: [
-                    graphSvg,
-                    ...graphRows,
-                  ] }) }),
-            ] }),
-            jsxs("div", { className: "dshGitSection", style: { flex: "0 0 auto" }, children: [
-              jsx("h4", { children: "提交" }),
-              jsx("textarea", { className: "dshGitTextarea", placeholder: "提交说明", value: message, onChange: (e) => setMessage(e.target.value) }),
-              jsx("div", { className: "dshGitRow", children: [
-                jsx(primitives.Button, { variant: "primary", size: "sm", onClick: commitStaged, disabled: busy || !message.trim() || staged.length === 0, children: "提交已暂存 (" + staged.length + ")" }),
-                jsx(primitives.Button, { variant: "outline", size: "sm", onClick: () => runMutation("amend", { message: message.trim() || undefined }), disabled: busy, title: "修改上一次提交", children: "Amend" }),
+
               ] }),
-              jsx("div", { className: "dshGitRow", children: [
-                jsx(primitives.Button, { variant: "outline", size: "sm", onClick: () => runMutation("push", { branch: branch, setUpstream: true }), disabled: busy, children: "推送" }),
-                jsx(primitives.Button, { variant: "outline", size: "sm", onClick: () => runMutation("pull", {}), disabled: busy, children: "拉取" }),
-                jsx(primitives.Button, { variant: "outline", size: "sm", onClick: () => runMutation("fetch", { prune: true }), disabled: busy, children: "Fetch" }),
-              ] }),
-              output ? jsx("pre", { className: "dshGitOut", children: output }) : null,
-              error ? jsx("div", { className: "dshGitErr", role: "alert", children: error }) : null,
-            ] }),
-          ] }),
-          // ── right column: tabs ──
-          jsxs("div", { className: "dshGitCol", children: [
+jsxs("div", { className: "dshGitCol", style: { flex: 1, borderRight: "none" }, children: [
             jsx("div", { className: "dshGitTabs", children: [
               jsx("button", { className: "dshGitTab" + (rightTab === "diff" ? " dshGitTabActive" : ""), onClick: () => setRightTab("diff"), children: "差异" }),
               jsx("button", { className: "dshGitTab" + (rightTab === "file" ? " dshGitTabActive" : ""), onClick: () => { if (diffFile) showFile(diffFile); setRightTab("file"); }, children: "文件对比" }),
               jsx("button", { className: "dshGitTab" + (rightTab === "blame" ? " dshGitTabActive" : ""), onClick: () => { if (diffFile) showFile(diffFile); setRightTab("blame"); }, children: "Blame" }),
             ] }),
-            jsx("div", { className: "dshGitSection", style: { flex: 1, display: "flex", flexDirection: "column" }, children: rightContent() }),
+            jsx("div", { className: "dshGitSection", style: { flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }, children: rightContent() }),
           ] }),
-        ] }),
+          ] }),
+          // ── commit bar: full width at the bottom ──
+          jsxs("div", { className: "dshGitCommitBar", children: [
+jsx("input", {
+              className: "dshGitInput",
+              placeholder: "提交说明，Enter 提交",
+              value: message,
+              onChange: (e) => setMessage(e.target.value),
+              onKeyDown: (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); commitStaged(); } },
+            }),
+            gitIconBtn(commitStaged, "提交（已暂存 " + staged.length + "）", "check", busy || !message.trim() || staged.length === 0, true),
+            gitIconBtn(() => runMutation("amend", { message: message.trim() || undefined }), "Amend 修改上一次提交", "edit", busy),
+            gitIconBtn(() => runMutation("push", { branch: branch, setUpstream: true }), "推送", "up", busy),
+            gitIconBtn(() => runMutation("pull", {}), "拉取", "down", busy),
+            gitIconBtn(() => runMutation("fetch", { prune: true }), "Fetch", "refresh", busy),
+            output || error ? jsxs("span", { className: "dshGitCommitMsg", children: [
+              output ? jsx("pre", { className: "dshGitOut", children: output }) : null,
+              error ? jsx("div", { className: "dshGitErr", role: "alert", children: error }) : null,
+            ] }) : null,
+          
+          ] }),
+] }),
         modal ? jsx(Modal, { title: modal.title, onClose: () => setModal(null), children: jsxs(Fragment, { children: [
           jsx("div", { children: modal.body }),
           jsx("div", { className: "dshGitRow", children: [
