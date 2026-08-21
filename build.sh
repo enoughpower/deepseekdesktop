@@ -155,9 +155,11 @@ codesign --force --sign - "$BACKEND/node" 2>/dev/null || true
 # --- 3. launcher + profile overlay ----------------------------------------
 cp "$ROOT/launcher.mjs" "$BACKEND/launcher.mjs"
 # Runtime plugin helpers (方案 C): shim generator + per-profile plugin CLI.
-# desktop-bin.mjs is imported by launcher.mjs; plugins.mjs is the CLI entry.
+# desktop-bin.mjs is imported by launcher.mjs; plugins.mjs is the CLI entry;
+# dsh-home.mjs isolates the app's user-data home and links bundled plugins.
 cp "$ROOT/desktop-bin.mjs" "$BACKEND/desktop-bin.mjs"
 cp "$ROOT/plugins.mjs" "$BACKEND/plugins.mjs"
+cp "$ROOT/dsh-home.mjs" "$BACKEND/dsh-home.mjs"
 # The bundled pnpm (declared in package.json) enables dsh plugin in the app.
 # node_modules is copied above; just verify the entry exists here.
 # prune.patch.yml: without KEEP_EXTRA_PROVIDERS the Pi.ai multi-provider row is
@@ -180,6 +182,7 @@ cp "$ROOT/updater.patch.yml" "$BACKEND/updater.patch.yml"
 cp "$ROOT/skills-hub.patch.yml" "$BACKEND/skills-hub.patch.yml"
 cp "$ROOT/mcp-settings.patch.yml" "$BACKEND/mcp-settings.patch.yml"
 cp "$ROOT/vision.patch.yml" "$BACKEND/vision.patch.yml"
+cp "$ROOT/theme-blackgold.patch.yml" "$BACKEND/theme-blackgold.patch.yml"
 
 # --- 4. compile the native WKWebView shell ---------------------------------
 echo "==> compiling Swift shell"

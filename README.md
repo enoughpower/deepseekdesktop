@@ -77,10 +77,14 @@ KEEP_EXTRA_PROVIDERS=0 ./build.sh   # 最小版：仅 DeepSeek，约小 110 MB
 ## 工作原理
 
 1. 应用启动后，Swift 壳用 `Process` 拉起 `Contents/Resources/backend/node launcher.mjs`。
-2. `launcher.mjs` 启动 `dsh web --patch prune.patch.yml --host 127.0.0.1 --port 0`，
+2. `launcher.mjs` 先把应用的用户数据目录定为专用的 `DSH_HOME`
+   （默认 `~/Library/Application Support/DeepSeekHarness`，可用环境变量 `DSH_HOME` 覆盖），
+   并把内置插件在 `profiles/node_modules` 里建好软链，然后启动
+   `dsh web --patch <各 overlay>.patch.yml --host 127.0.0.1 --port 0`，
    轮询确认前端可访问后，向 stdout 打一行 `DSH_READY=http://127.0.0.1:<port>`。
 3. 壳读到 `DSH_READY` 后把该地址加载进 `WKWebView`。
-4. 用户数据（配置、凭据、会话、profile）仍落在 `~/.dsh`，与命令行 `dsh` 共享。
+4. 用户数据（配置、凭据、会话、profile、插件、技能）落在**独立的** `DSH_HOME`，
+   与命令行 `dsh` 的 `~/.dsh` 完全隔离，互不干扰。
 5. 退出应用时，壳向 launcher 发 `SIGTERM`，launcher 转发给 `dsh web` 完成优雅退出。
 
 后端只监听 `127.0.0.1` 的随机端口，避免端口冲突与暴露到局域网。
@@ -167,7 +171,7 @@ $HOME/.nvm/versions/node/v22.19.0/bin/npm install --omit=dev --no-audit --no-fun
   ZenMux / 阿里云百炼（Model Studio）/ TokenDance / OpenRouter，填 API Key 即用；
   API Key 走官方凭证服务（浏览器只读、不回显）。
 - **回退链**：没有可用的云视觉服务时，自动回退 macOS 自带 Vision OCR 或 Tesseract。
-- **等价配置**：非密钥字段也可写在 `~/.dsh/settings.yaml` 的 `llm-deepseek` 段
+- **等价配置**：非密钥字段也可写在 `$DSH_HOME/settings.yaml` 的 `llm-deepseek` 段
   （`visionBackend` / `visionBackendModel` / `visionBackendBaseURL` / `maxImages`）；
   密钥用环境变量（如 `ZENMUX_API_KEY`）。
 
@@ -184,7 +188,7 @@ $HOME/.nvm/versions/node/v22.19.0/bin/npm install --omit=dev --no-audit --no-fun
 
 内置第三方插件 **dsh-skills**（[CocoSgt/dsh-skills](https://github.com/CocoSgt/dsh-skills)，
 取代原先只读的 `dsh-skill-manager`）。把散落的技能汇成全局库：Claude Code 的
-`~/.claude/skills`、项目目录、`.skill` 包等统一入库到 `~/.dsh/skills`（官方
+`~/.claude/skills`、项目目录、`.skill` 包等统一入库到 `$DSH_HOME/skills`（官方
 skill-filesystem 默认扫描根，watcher 实时），入库即出现在输入框的「/」斜杠菜单；
 设置页侧栏有「技能」导航页。
 
@@ -240,11 +244,12 @@ Streamable HTTP），点「保存」即热更新生效（无需重启进程）�
 
 ## 用户插件（方案 C：运行时安装，不重编译）
 
-内核的 `dsh` 原生支持用户级插件：把应用装进 **profile**（`~/.dsh/profiles/web`）里的
-`node_modules`，通过声明 `dsh.bundle` 自动加入 layer 栈。本应用已内置该机制：
+内核的 `dsh` 原生支持用户级插件：把应用装进 **profile**（`$DSH_HOME/profiles/web`）里的
+`node_modules`，通过声明 `dsh.bundle` 自动加入 layer 栈（`$DSH_HOME` 是应用自己的用户目录，
+默认 `~/Library/Application Support/DeepSeekHarness`，可设 `DSH_HOME` 覆盖）。本应用已内置该机制：
 
 - **运行时自带的 node/pnpm**：`launcher.mjs` 启动时用 `desktop-bin.mjs` 生成
-  `~/.dsh/.desktop-bin/{node,pnpm}` shim 并前置 PATH，`dsh plugin` 因此能在
+  `$DSH_HOME/.desktop-bin/{node,pnpm}` shim 并前置 PATH，`dsh plugin` 因此能在
   打包后的应用里跑通，无需系统 Node / pnpm。
 - **一键 CLI**（`add-plugin.sh`）：
   ```sh
@@ -252,7 +257,7 @@ Streamable HTTP），点「保存」即热更新生效（无需重启进程）�
   ./add-plugin.sh --runtime list                      # 列出已装的 bundle
   ./add-plugin.sh --runtime remove <包名>             # 卸
   ```
-- **不重编译**：用户插件存在 `~/.dsh`,`./build.sh` 重建/升级只重写应用包内的
+- **不重编译**：用户插件存在 `$DSH_HOME`,`./build.sh` 重建/升级只重写应用包内的
   node_modules，不会清掉用户已装插件。要装的是声明了 `dsh.bundle` 的 bundle 插件
   （`package.json` 带 `dsh.bundle.patch` + `cordis.patch.yml`）。
 

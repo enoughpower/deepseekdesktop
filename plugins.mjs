@@ -19,10 +19,10 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
 import { dirname, isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ensureDesktopBin } from "./desktop-bin.mjs";
+import { resolveDesktopHome } from "./dsh-home.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DSH_BIN = join(HERE, "node_modules", "@deepseek-ai", "dsh", "lib", "bin.js");
@@ -40,7 +40,7 @@ function parseArgs(argv) {
   return { profile, verb: positional[0], pkg: positional[1] };
 }
 
-function profileDir(profile, home = process.env.DSH_HOME || join(homedir(), ".dsh")) {
+function profileDir(profile, home = process.env.DSH_HOME || resolveDesktopHome()) {
   return join(home, "profiles", profile);
 }
 
@@ -134,6 +134,12 @@ async function main() {
   if (!verb) {
     console.error("usage: node plugins.mjs <add|remove|list> <package> [--profile name]");
     process.exit(2);
+  }
+
+  // Target the desktop's isolated user-data home (unless the caller pinned
+  // $DSH_HOME), so `dsh plugin` edits the same profile the app boots.
+  if (process.env.DSH_HOME === undefined || process.env.DSH_HOME.trim() === "") {
+    process.env.DSH_HOME = resolveDesktopHome();
   }
 
   const binDir = await ensureDesktopBin();

@@ -16,9 +16,26 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import http from "node:http";
 import { ensureDesktopBin, desktopBinDir } from "./desktop-bin.mjs";
+import { resolveDesktopHome, linkBundledPlugins } from "./dsh-home.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DSH_BIN = join(HERE, "node_modules", "@deepseek-ai", "dsh", "lib", "bin.js");
+
+// Isolate the desktop app's user data from the CLI's shared `~/.dsh`:
+// 1) Resolve the desktop's own home ($DSH_HOME). The environment variable
+//    drives every path inside the harness (config, credentials, sessions,
+//    profiles), so the backend boots against a dedicated data directory.
+// 2) Put it on process.env early so desktop-bin's shims and the spawned child
+//    all agree, then expose the bundled overlay plugins to the profile. Each
+//    *.patch.yml registers packages bundled in backend/node_modules that the
+//    profile must reach through $DSH_HOME/profiles/node_modules; linking them
+//    here (idempotent) makes a fresh, isolated profile resolve them — the step
+//    that lets the app boot again without relying on a pre-seeded ~/.dsh.
+const DSH_HOME = resolveDesktopHome();
+if (process.env.DSH_HOME === undefined || process.env.DSH_HOME.trim() === "") {
+  process.env.DSH_HOME = DSH_HOME;
+}
+linkBundledPlugins(HERE, process.env.DSH_HOME);
 
 /**
  * Discover the overlay patches to apply. Any *.patch.yml dropped into the
