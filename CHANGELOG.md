@@ -156,3 +156,8 @@ GUI 启动时 AMFI 可能校验失败。要改就改**源码**（`desktop/` 下�
   `cp -R` 覆盖安装到 /Applications → `pkill -f DeepSeekHarness` 杀旧应用 →
   `open` 启动新版 → 确认正常后再通知验收。
 - skill（desktop-app-dev）已同步这两条规则。
+
+### 2026-08-22 · 项目 skill 文件加入 .gitignore
+- `.gitignore` 增加 `.dsh/skills/`（项目 skill 仅本地使用，不上传远端）。
+- `git rm --cached` 解除 `.dsh/skills/desktop-app-dev/SKILL.md` 的跟踪（本地文件保留，
+  skill 仍可正常加载）。

@@ -3,3 +3,6 @@ dist/
 *.log
 .DS_Store
 dmg-tools/make_dmg_bg
+
+# 项目 skill 文件：仅本地使用，不上传远端
+.dsh/skills/
