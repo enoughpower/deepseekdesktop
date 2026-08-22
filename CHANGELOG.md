@@ -31,3 +31,5 @@
   宽 min 40px、撑满整行高度；中间容器 branchActions/menuWrap 同步 stretch）。
 - **「⋯」下拉菜单危险项（移除文件）高亮改灰色**：背景从暗红 12% 混合改为与文件列表选中
   同款的 `--dsw-alias-interactive-bg-hover`（保留红色文字提示）。
+- **许可证**：选 **MIT**（与所有内置第三方插件及上游 @deepseek-ai/dsh 兼容），新增
+  `LICENSE`（作者 enoughpower）、`package.json` 加 `"license":"MIT"`、README 增「许可证」小节。

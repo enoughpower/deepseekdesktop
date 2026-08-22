@@ -289,3 +289,8 @@ v1.5.38），提供会话级费用统计：
 
 launcher 还会把后端目录（含内置 `node` 二进制）放在 `PATH` 最前，确保插件跑视觉
 子进程时用的是应用自带的 Node，而非可能损坏的系统 Node。
+
+## 许可证
+
+本项目（`desktop/`）采用 **MIT License**（见 [LICENSE](LICENSE)）。
+内置的各第三方插件与上游 `@deepseek-ai/dsh` 均为 MIT（各自保留其版权声明与 LICENSE）。
