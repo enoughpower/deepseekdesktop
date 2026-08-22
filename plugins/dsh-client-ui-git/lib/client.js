@@ -151,20 +151,20 @@ window.__ModuleLoader__.load({
       ".dshGitBranchItemCurrent{color:var(--dsw-alias-state-success-primary);font-weight:600}",
       ".dshGitBranchItemRemote{color:var(--dsw-alias-label-secondary)}",
       ".dshGitBranchTrack{margin-left:auto;color:var(--dsw-alias-label-tertiary);font-size:11px;white-space:nowrap}",
-      ".dshGitBranchActions{display:flex;gap:4px;margin-left:auto;flex:none}",
+      ".dshGitBranchActions{display:flex;gap:4px;margin-left:auto;flex:none;align-self:stretch;align-items:stretch}",
       ".dshGitMiniBtn{border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:11px;padding:2px 6px;font-family:inherit}",
       ".dshGitMiniBtn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}",
       ".dshGitMiniBtn:disabled{opacity:.45;cursor:default}",
       ".dshGitMiniBtnDanger:hover:not(:disabled){color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary)}",
       // 文件行 "⋯" 菜单
-      ".dshGitMenuWrap{position:relative;display:inline-flex}",
-      ".dshGitMoreBtn{flex:none;border:none;background:transparent;color:var(--dsw-alias-label-tertiary);cursor:pointer;font-size:14px;line-height:1;padding:2px 4px;border-radius:4px;font-family:inherit}",
+      ".dshGitMenuWrap{position:relative;display:inline-flex;align-self:stretch;align-items:stretch}",
+      ".dshGitMoreBtn{flex:none;align-self:stretch;height:100%;width:100%;border:none;background:transparent;color:var(--dsw-alias-label-tertiary);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;min-width:40px;padding:0 10px;border-radius:6px;font-family:inherit}",
       ".dshGitMoreBtn:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}",
       ".dshGitMenu{position:absolute;right:0;top:calc(100% + 4px);z-index:50;min-width:140px;padding:6px;display:flex;flex-direction:column;gap:2px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.18)}",
       ".dshGitMenuItem{display:flex;align-items:center;width:100%;box-sizing:border-box;text-align:left;padding:8px 12px;border:none;border-radius:8px;background:transparent;color:var(--dsw-alias-label-primary);cursor:pointer;font-size:13px;line-height:1.5;font-family:inherit;white-space:nowrap}",
       ".dshGitMenuItem:hover{background:var(--dsw-alias-interactive-bg-hover)}",
       ".dshGitMenuItemDanger{color:var(--dsw-alias-state-error-primary)}",
-      ".dshGitMenuItemDanger:hover{color:var(--dsw-alias-state-error-primary);background:color-mix(in srgb,var(--dsw-alias-state-error-primary,#e5484d) 12%,transparent)}",
+      ".dshGitMenuItemDanger:hover{color:var(--dsw-alias-state-error-primary);background:var(--dsw-alias-interactive-bg-hover)}",
       ".dshGitBranchBox{margin-top:6px;padding:4px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-2);max-height:240px;overflow:auto}",
       ".dshGitToolbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}",
       // graph
@@ -785,7 +785,11 @@ window.__ModuleLoader__.load({
                   type: "button",
                   title: "更多操作",
                   onClick: (e) => { e.stopPropagation(); setMenuFor(menuOpen ? null : f.path); },
-                  children: "⋯",
+                  children: jsx("svg", { width: 16, height: 16, viewBox: "0 0 16 16", fill: "currentColor", children: [
+                    jsx("circle", { cx: 2.5, cy: 8, r: 1.4 }),
+                    jsx("circle", { cx: 8, cy: 8, r: 1.4 }),
+                    jsx("circle", { cx: 13.5, cy: 8, r: 1.4 }),
+                  ] }),
                 }),
                 menuOpen
                   ? jsxs("div", { className: "dshGitMenu", children: [

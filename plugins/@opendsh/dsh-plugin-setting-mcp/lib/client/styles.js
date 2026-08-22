@@ -12,6 +12,7 @@
 export const C = {
     wrap: "dshmcp-wrap",
     desc: "dshmcp-desc",
+    contact: "dshmcp-contact",
     row: "dshmcp-row",
     rowMain: "dshmcp-row-main",
     name: "dshmcp-name",
@@ -44,6 +45,8 @@ export const C = {
 const css = `
 .dshmcp-wrap{display:flex;flex-direction:column;gap:10px;padding:4px 0}
 .dshmcp-desc{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px;margin:0}
+.dshmcp-contact{color:var(--dsw-alias-state-info-primary,var(--dsw-alias-label-secondary));font-size:11px;line-height:16px;text-decoration:underline;margin-left:8px;cursor:pointer;white-space:nowrap}
+.dshmcp-contact:hover{text-decoration:underline;opacity:.8}
 .dshmcp-row{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px}
 .dshmcp-row-main{min-width:0;display:flex;flex-direction:column;gap:2px;flex:1}
 .dshmcp-name{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:500;line-height:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

@@ -23,3 +23,11 @@
   验收前自动安装（挂载 → 覆盖安装 → 杀旧 → 启动新）。
 - **文档 / 流程**：新增并应用项目 skill（`desktop-app-dev`）；本文件改为按天总结；
   README 清理历史回顾并同步功能变化；skill 文件加入 `.gitignore`（不上传远端）。
+- **第三方插件升级到最新**（自己写的 git/updater 不动）：dsh-vision-router 1.7.3→1.7.6、
+  dsh-cost-meter 1.5.36→1.5.38、@opendsh/dsh-plugin-setting-mcp 0.1.1→0.1.2；
+  dsh-skills 已最新，@frostgao 主题不在 npm。重建验证安装完成。
+- **Git 文件行「⋯」菜单点击区域放大**（dshGitMoreBtn：padding 6px 10px、min 34×30、居中）。
+- **Git 文件行「⋯」改用 icon + 点击区域撑满行高**（SVG 三个圆点；按钮 align-self:stretch、
+  宽 min 40px、撑满整行高度；中间容器 branchActions/menuWrap 同步 stretch）。
+- **「⋯」下拉菜单危险项（移除文件）高亮改灰色**：背景从暗红 12% 混合改为与文件列表选中
+  同款的 `--dsw-alias-interactive-bg-hover`（保留红色文字提示）。

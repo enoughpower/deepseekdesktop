@@ -6,6 +6,10 @@ const layout = {
     row: { display: "flex", alignItems: "center", gap: 8 },
     spacer: { flex: 1 },
 };
+/** Page intro line: the `desc` copy followed by a "contact the developer" link. */
+function SectionDesc({ t }) {
+    return (_jsxs("p", { className: C.desc, children: [t("desc"), _jsx("a", { className: C.contact, href: "https://paiban.md/qrcode.png", target: "_blank", rel: "noreferrer", children: t("contact") })] }));
+}
 // ── helpers ────────────────────────────────────────────────────────────────
 let tempIdCounter = 0;
 function tempId() {
@@ -263,9 +267,9 @@ export function McpSettingsSection({ mcp, t }) {
         setEditor(null);
     };
     if (busy) {
-        return (_jsxs("div", { className: C.wrap, children: [_jsx("p", { className: C.desc, children: t("desc") }), _jsx("div", { className: C.empty, children: t("status.loading") })] }));
+        return (_jsxs("div", { className: C.wrap, children: [_jsx(SectionDesc, { t: t }), _jsx("div", { className: C.empty, children: t("status.loading") })] }));
     }
-    return (_jsxs("div", { className: C.wrap, children: [_jsx("p", { className: C.desc, children: t("desc") }), error !== "" ? _jsx("div", { className: C.error, children: error }) : null, _jsxs("div", { style: layout.row, children: [_jsx("button", { type: "button", className: `${C.btn} ${C.btnPrimary}`, onClick: () => setEditor(toEditorDraft()), disabled: saving, children: t("list.add") }), _jsx("div", { style: layout.spacer }), dirty ? _jsx("span", { className: C.hint, children: t("footer.dirty") }) : null] }), drafts.length === 0 ? (_jsxs("div", { className: C.empty, children: [_jsx("span", { children: t("list.empty") }), _jsx("span", { children: t("list.emptyHint") })] })) : (drafts.map((server) => {
+    return (_jsxs("div", { className: C.wrap, children: [_jsx(SectionDesc, { t: t }), error !== "" ? _jsx("div", { className: C.error, children: error }) : null, _jsxs("div", { style: layout.row, children: [_jsx("button", { type: "button", className: `${C.btn} ${C.btnPrimary}`, onClick: () => setEditor(toEditorDraft()), disabled: saving, children: t("list.add") }), _jsx("div", { style: layout.spacer }), dirty ? _jsx("span", { className: C.hint, children: t("footer.dirty") }) : null] }), drafts.length === 0 ? (_jsxs("div", { className: C.empty, children: [_jsx("span", { children: t("list.empty") }), _jsx("span", { children: t("list.emptyHint") })] })) : (drafts.map((server) => {
                 const view = servers.find((entry) => entry.id === server.id);
                 const badge = view === undefined ? { cls: C.badgeOff, text: "" } : phaseBadge(t, view);
                 const target = server.transport === "stdio" ? server.command : server.url;

@@ -22,6 +22,7 @@ window.__ModuleLoader__.load({
 		nav: "MCP 服务",
 		title: "MCP 服务",
 		desc: "管理 MCP 服务连接。保存后会立即热更新：新增、修改、移除或开关都无需重启进程。",
+		contact: "联系开发者",
 		"list.add": "新增服务",
 		"list.empty": "还没有配置任何 MCP 服务",
 		"list.emptyHint": "点击「新增服务」添加一个 stdio 或 HTTP 类型的 MCP 服务器。",
@@ -75,6 +76,7 @@ window.__ModuleLoader__.load({
 		nav: "MCP servers",
 		title: "MCP servers",
 		desc: "Manage MCP server connections. Saving hot-reloads immediately: add, edit, remove, or toggle a server without restarting the process.",
+		contact: "Contact developer",
 		"list.add": "Add server",
 		"list.empty": "No MCP servers configured yet",
 		"list.emptyHint": "Click \"Add server\" to add a stdio or HTTP MCP server.",
@@ -4502,6 +4504,7 @@ window.__ModuleLoader__.load({
 	const C = {
 		wrap: "dshmcp-wrap",
 		desc: "dshmcp-desc",
+		contact: "dshmcp-contact",
 		row: "dshmcp-row",
 		rowMain: "dshmcp-row-main",
 		name: "dshmcp-name",
@@ -4534,6 +4537,8 @@ window.__ModuleLoader__.load({
 	const css = `
 	.dshmcp-wrap{display:flex;flex-direction:column;gap:10px;padding:4px 0}
 	.dshmcp-desc{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px;margin:0}
+	.dshmcp-contact{color:var(--dsw-alias-state-info-primary,var(--dsw-alias-label-secondary));font-size:11px;line-height:16px;text-decoration:underline;margin-left:8px;cursor:pointer;white-space:nowrap}
+	.dshmcp-contact:hover{text-decoration:underline;opacity:.8}
 	.dshmcp-row{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px}
 	.dshmcp-row-main{min-width:0;display:flex;flex-direction:column;gap:2px;flex:1}
 	.dshmcp-name{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:500;line-height:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -4588,6 +4593,19 @@ window.__ModuleLoader__.load({
 		},
 		spacer: { flex: 1 }
 	};
+	/** Page intro line: the `desc` copy followed by a "contact the developer" link. */
+	function SectionDesc({ t }) {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
+			className: C.desc,
+			children: [t("desc"), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("a", {
+				className: C.contact,
+				href: "https://paiban.md/qrcode.png",
+				target: "_blank",
+				rel: "noreferrer",
+				children: t("contact")
+			})]
+		});
+	}
 	let tempIdCounter = 0;
 	function tempId() {
 		tempIdCounter += 1;
@@ -4991,10 +5009,7 @@ window.__ModuleLoader__.load({
 		};
 		if (busy) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: C.wrap,
-			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-				className: C.desc,
-				children: t("desc")
-			}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(SectionDesc, { t }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				className: C.empty,
 				children: t("status.loading")
 			})]
@@ -5002,10 +5017,7 @@ window.__ModuleLoader__.load({
 		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: C.wrap,
 			children: [
-				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-					className: C.desc,
-					children: t("desc")
-				}),
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)(SectionDesc, { t }),
 				error !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 					className: C.error,
 					children: error

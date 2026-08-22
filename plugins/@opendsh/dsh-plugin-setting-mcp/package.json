@@ -1,6 +1,6 @@
 {
   "name": "@opendsh/dsh-plugin-setting-mcp",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "DSH web plugin: manage MCP servers from the settings panel (view, edit, remove, enable/disable) with hot reload on save",
   "type": "module",
   "license": "MIT",

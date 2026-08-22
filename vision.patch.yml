@@ -1,6 +1,6 @@
 # Desktop-app overlay: dsh-vision-router — eyes for text-only DeepSeek agents.
 #
-# `dsh-vision-router` (ysr666, v1.7.3) keeps the original pixels on the vision
+# `dsh-vision-router` (ysr666, v1.7.6) keeps the original pixels on the vision
 # model side and DeepSeek as the brain: a built-in free vision chain (OVHcloud
 # anonymous, key-less) + 14 pixel-level vision tools (ground / crop / pixel-diff
 # / colors / OCR / svg-trace / cutout / html-screenshot …). It does NOT take

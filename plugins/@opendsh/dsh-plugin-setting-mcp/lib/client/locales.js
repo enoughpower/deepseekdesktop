@@ -12,6 +12,8 @@ export const zh = {
     nav: "MCP 服务",
     title: "MCP 服务",
     desc: "管理 MCP 服务连接。保存后会立即热更新：新增、修改、移除或开关都无需重启进程。",
+    // Contact the developer link (page desc).
+    contact: "联系开发者",
     // List view.
     "list.add": "新增服务",
     "list.empty": "还没有配置任何 MCP 服务",
@@ -71,6 +73,7 @@ export const en = {
     nav: "MCP servers",
     title: "MCP servers",
     desc: "Manage MCP server connections. Saving hot-reloads immediately: add, edit, remove, or toggle a server without restarting the process.",
+    contact: "Contact developer",
     "list.add": "Add server",
     "list.empty": "No MCP servers configured yet",
     "list.emptyHint": 'Click "Add server" to add a stdio or HTTP MCP server.',

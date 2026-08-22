@@ -12,9 +12,13 @@ import { installVisionRouterFileLogging } from './lib/file-logger.js'
 import { contextWithDelegatedReplay } from './lib/replay-delegation.js'
 import { contextWithReplayEnvelopeV2Compat } from './lib/replay-envelope-v2-compat.js'
 import { contextWithVisionExecutionPolicy } from './lib/vision-execution-policy.js'
+import { contextWithNativeImageCoexistence } from './lib/native-image-coexistence.js'
+import { installPiAiBridgeWireCompat } from './lib/pi-ai-bridge-wire-compat.js'
 import { installLiveModelDiscovery } from './lib/live-model-discovery.js'
 import { installVisionModelRegistry } from './lib/vision-model-registry.js'
 import { installLiveModelClientPrelude } from './lib/live-model-client-prelude.js'
+import { installExactVisionTestClient } from './lib/vision-backend-smoke-test-client.js'
+import { installVisionBackendSmokeTest } from './lib/vision-backend-smoke-test.js'
 import { installClientPresentationBoundary } from './lib/client-presentation-boundary.js'
 import { installAdversarialHardening } from './lib/adversarial-hardening.js'
 import { installOllamaColdStartGuard } from './lib/ollama-cold-start.js'
@@ -25,16 +29,18 @@ import { contextWithCoalescedAdapterUpdates } from './lib/adapter-update-coalesc
 import { installTesseractExecFileCompat } from './lib/tesseract-exec-compat.js'
 import { installLocalMutationRouteBoundary } from './lib/web-capability-boundary.js'
 import { installScreenshotSourceBoundary } from './lib/screenshot-source-boundary.js'
+import { installVisionToolRuntimeBoundary } from './lib/vision-tool-runtime-boundary.js'
 import { installVisionRouterRemoteSettingsBridge } from './lib/remote-settings-bridge.js'
+import { installSettingsRc8ClientLifecycle } from './lib/settings-client-rc8-lifecycle.js'
 import {
   installStructuredFlowHardening,
   normalizeGuidanceOverrides,
 } from './lib/structured-flow-hardening.js'
 import {
   attachmentContextForContract,
-  ensureVisionAttachmentAdmissionPolicy,
   hasBatchAttachmentContract,
   installHostSettingsCompatibility,
+  installVisionAttachmentAdmissionPolicy,
   protectHostProviderOwnership,
 } from './lib/dsh-contract-compat.js'
 
@@ -84,6 +90,7 @@ export {
   ensureVisionAttachmentAdmissionPolicy,
   hasBatchAttachmentContract,
   installHostSettingsCompatibility,
+  installVisionAttachmentAdmissionPolicy,
   protectHostProviderOwnership,
   // Transitional public aliases retained for callers/tests written during the
   // rc.7 compatibility pass. Runtime code below no longer branches on names.
@@ -163,18 +170,20 @@ export function apply(ctx, config = {}) {
   // generation. Keep the branch named after that observable capability rather
   // than a release number so rc.8+ naturally follows the same public contract.
   const batchAttachmentHost = hasBatchAttachmentContract(stabilizedCtx)
-  // DSH profile overlays replace an attachment-local config object wholesale.
-  // A stale pre-rc.8 Vision Router profile row can therefore erase the newer
-  // bundle's maxImageDimension and silently restore rc.8's 2000px default even
-  // after the plugin package itself has updated. Repair only that historical
-  // 20MiB/100MP fingerprint; explicit deployment policies remain authoritative.
+  // DSH may reconstruct attachment-local after a profile/home patch reload.
+  // Keep the historical rc.8 overlay migration attached to that service
+  // lifecycle instead of healing only the instance present during apply().
   if (batchAttachmentHost) {
-    ensureVisionAttachmentAdmissionPolicy(stabilizedCtx, logging.logger)
+    installVisionAttachmentAdmissionPolicy(stabilizedCtx, logging.logger)
   }
   // The remote settings bridge uses DSH Connection's trusted-host carrier
   // fence and its own safe-field capability allow-list. Main's local Web
   // mutation boundary continues to protect the independent /_dsh write routes.
   installVisionRouterRemoteSettingsBridge(stabilizedCtx, logging.logger)
+  // rc.8 swaps ModuleLoader.load() while entering live mode. The older local
+  // permission/risk shims still own rc.6/rc.7; this narrow lifecycle shim
+  // re-installs both contexts after rc.8's queue -> live transition.
+  installSettingsRc8ClientLifecycle(stabilizedCtx)
   const ownershipCtx = batchAttachmentHost
     ? protectHostProviderOwnership(stabilizedCtx)
     : stabilizedCtx
@@ -191,11 +200,22 @@ export function apply(ctx, config = {}) {
   const attachmentCompatCtx = attachmentContextForContract(settingsCtx, logging.logger, {
     installAndroidAttachmentCompat,
   })
+  // Put per-tool cwd/cancellation/cache policy AFTER Host settings compatibility
+  // so rc.7/rc.8's synthetic settings injection is visible to the boundary.
+  // The secure screenshot renderer owns its exact FsTarget and active browser
+  // cancellation directly, so it does not depend on this placement.
+  const toolRuntimeCtx = installVisionToolRuntimeBoundary(attachmentCompatCtx)
+  // DSH 0.1.1 publishes an exact native image-capable DeepSeek model. Do not
+  // put it ahead of Vision Router's own configured chain: only when the user
+  // has explicitly selected any Host-native image route, preserve raw pixels
+  // and skip the hidden instant-local caption pass for that turn. The override
+  // is AsyncLocalStorage-scoped and never mutates settings or provider order.
+  const nativeImageCompat = contextWithNativeImageCoexistence(toolRuntimeCtx, runtimeConfig)
   // Final structured-flow guard sits closest to core.apply so it sees the
   // actual tool registrations and pre-step listener. It makes bootstrap
   // one-shot, enforces fast/standard/deep/custom quotas, tracks mixed branches,
   // rejects empty/non-evidence results, and applies one shared visual deadline.
-  const structuredCtx = installStructuredFlowHardening(attachmentCompatCtx, runtimeConfig)
+  const structuredCtx = installStructuredFlowHardening(nativeImageCompat.ctx, nativeImageCompat.config)
   // Newer DSH releases publish llm/adapters-updated synchronously from inside
   // registerAdapter(). Coalesce only Vision Router's listener: nested events
   // mark the topology dirty and the outer pass reruns to a fixed point, so we
@@ -230,6 +250,15 @@ export function apply(ctx, config = {}) {
   // ordinary chat model picker). The existing classic client bundle stays the
   // DSH module-system artifact, including HMR/source-map behavior.
   installLiveModelClientPrelude(reconciledCtx)
+  // #266: 1.7.x gets one exact, no-fallback image smoke test per visible row.
+  // Keep it out of the controlled React form so the v2 capability-benchmark
+  // client can take ownership later without forking the stable settings UI.
+  installExactVisionTestClient(reconciledCtx)
+  // DSH 0.1.1 adds per-route/model pi-ai wire compatibility. The legacy
+  // direct image bridge is non-streaming and predates that surface, so preserve
+  // maxTokensField + route headers at its final fetch boundary. Ordinary DSH
+  // streams and unrelated Vision Router HTTP providers remain byte-identical.
+  installPiAiBridgeWireCompat(reconciledCtx, logging.logger)
   // Direct compatibility bridging is allowed only after DSH/pi-ai's exact
   // pre-wire image-capability admission rejection, or a local UNKNOWN_MODEL
   // backed by exact private-registry evidence. Record the same provenance in
@@ -240,6 +269,14 @@ export function apply(ctx, config = {}) {
     isBridgeEvidence: (provider, model) => liveDiscovery.hasModel(provider, model),
     evidenceSource: (provider, model) => liveDiscovery.evidenceSource?.(provider, model),
     logger: logging.logger,
+  })
+  // The smoke-test route sends only a built-in probe image to the exact selected
+  // backend. It never walks the configured fallback chain, so a healthy OVH
+  // fallback can no longer make a broken custom model look healthy. Its narrow
+  // compatibility bridge uses the same live-discovery evidence gate as runtime.
+  installVisionBackendSmokeTest(executionCtx, runtimeConfig, core, {
+    logger: logging.logger,
+    isBridgeEvidence: (provider, model) => liveDiscovery.hasModel(provider, model),
   })
   // index.js historically passes image bytes as `options.input` to the async
   // execFile API. That option is not fed into child stdin, so Tesseract waits
@@ -267,7 +304,7 @@ export function apply(ctx, config = {}) {
     /* diagnostics must never break apply */
   }
   try {
-    const result = core.apply(executionCtx, runtimeConfig)
+    const result = core.apply(executionCtx, nativeImageCompat.config)
     // On newer Hosts the Settings -> Models surface is backed by the
     // configurable-provider directory, not by the live adapter registry alone.
     // Publish the main DeepSeek + 自动识图 route as a derived alias of official
