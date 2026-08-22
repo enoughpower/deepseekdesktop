@@ -1,296 +1,316 @@
-# DeepSeek Harness — macOS 桌面版
+# DeepSeek Harness — macOS Desktop
 
-把 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`@deepseek-ai/dsh`）封装成原生 macOS 桌面应用。壳使用系统 **WKWebView**（不是 Electron），后端打包精简后的 **Node.js 运行时 + 精简 node_modules**，因此体积远小于 Electron 方案。
+**English** | [中文](README.zh.md)
 
-## 产物
+A native macOS desktop wrapper around [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
+(`@deepseek-ai/dsh`). The shell uses the system **WKWebView** (not Electron); the backend bundles a
+**slimmed Node.js runtime + pruned node_modules**, so the size is far smaller than an Electron build.
 
-`./build.sh` 会产出 `dist/DeepSeekHarness.app`，双击即可运行（本地临时签名）。
+## Quick Start (Build & Use)
 
-| 组成 | 大小 | 说明 |
-|---|---|---|
-| `node` 运行时 | ~85 MB | 本地 Node 用 `strip -x` 去掉调试/本地符号（保留原生 addon 需要的导出符号） |
-| `node_modules` | ~94 MB | 生产依赖再精简（见下） |
-| Swift 壳 | ~0.1 MB | AppKit + WKWebView 单文件 |
-| **合计** | **~180 MB** | 对比：Electron 方案通常 200 MB 起，且不含后端依赖 |
+### Artifacts
 
-## 目录结构
+`./build.sh` produces **`DeepSeekHarness.app`** in `dist/` (double-click to run, ad-hoc signed locally);
+adding `--dmg` also produces a **DMG installer** named
+`DeepSeekHarness-<version>-<MMddHHmm>-<full|lite>.dmg` (`full`=full build, `lite`=slim build).
+
+### Build
+
+Requirements: macOS + Xcode command-line tools (`swiftc`/`codesign`) + Node.js (to bundle the runtime
+and install dependencies).
+
+```bash
+cd desktop
+./build.sh                          # default: full build (all multi-provider SDKs)
+./build.sh --dmg                    # also produce a DMG installer
+KEEP_EXTRA_PROVIDERS=0 ./build.sh --dmg   # slim: DeepSeek only, smaller (see "Size Comparison")
+```
+
+- The first build runs `npm install --omit=dev` for `@deepseek-ai/dsh` production deps.
+- `KEEP_EXTRA_PROVIDERS=0` follows the slim path: `prune.sh` removes the Pi.ai etc. multi-provider
+  SDKs and `prune.patch.yml` disables the `llm-pi-ai` row; the default model stays DeepSeek.
+
+### Install the DMG
+
+1. Double-click `dist/DeepSeekHarness-<version>-*.dmg` to mount it.
+2. Drag **`DeepSeekHarness.app`** into **`/Applications`** (quit any running copy first).
+3. Open from Launchpad/Finder; user data lives in `~/Library/Application Support/DeepSeekHarness`.
+
+> Command-line overwrite install:
+> ```bash
+> hdiutil attach <dmg>
+> rm -rf /Applications/DeepSeekHarness.app && cp -R '<mount>/DeepSeekHarness.app' /Applications/
+> hdiutil detach <mount>
+> ```
+
+## Directory Layout
 
 ```
 desktop/
 ├── App/
-│   ├── main.swift          # 原生 WKWebView 壳：起后端、读 DSH_READY、加载页面、随退出清理
-│   ├── Info.plist          # 应用清单（含 ATS 本地网络豁免）
-│   ├── make_icon.swift     # 图标生成（可选）
-│   └── icon.icns           # 已生成的图标
-├── launcher.mjs            # 后端监督进程：spawn dsh web，确认就绪后输出 DSH_READY=<url>
-├── desktop-bin.mjs         # node/pnpm 运行时 shim 生成器（方案 C）
-├── plugins.mjs             # 用户级插件 CLI：add/remove/list（方案 C）
-├── add-plugin.sh           # 一键装内置插件 / --runtime 走用户级安装
-├── prune.patch.yml         # 禁用被裁剪掉的插件行（llm-pi-ai、telemetry）
-├── git.patch.yml           # 注册内置 Git 插件
-├── billing.patch.yml       # 注册内置费用插件 dsh-cost-meter
-├── updater.patch.yml       # 注册内置版本号/检查更新插件
-├── skills-hub.patch.yml   # 注册内置全局技能库插件 dsh-skills
-├── mcp-settings.patch.yml  # 注册内置 MCP 服务管理插件
-├── vision.patch.yml        # 注册识图插件 dsh-vision-router v1.7.6（不接管 llm-deepseek）
-├── theme-blackgold.patch.yml # 注册黑金主题插件（@frostgao/dsh-theme-blackgold）
-├── prune.sh                # node_modules 精简脚本
-├── build.sh                # 一键构建
-├── plugins/                # 内置插件源码（构建时拷入后端 node_modules）
-└── package.json            # 仅声明依赖 @deepseek-ai/dsh
+│   ├── main.swift          # WKWebView shell: start backend, read DSH_READY, load page, clean on exit
+│   ├── Info.plist          # app manifest (incl. ATS local-network exemption)
+│   ├── make_icon.swift     # icon generator (optional)
+│   └── icon.icns           # generated icon
+├── launcher.mjs            # backend supervisor: spawn dsh web, print DSH_READY=<url> when ready
+├── desktop-bin.mjs         # node/pnpm runtime shim generator (Plan C)
+├── plugins.mjs             # user-level plugin CLI: add/remove/list (Plan C)
+├── add-plugin.sh           # one-click bundled plugin install / --runtime user-level install
+├── prune.patch.yml         # disables pruned plugin rows (llm-pi-ai, telemetry)
+├── git.patch.yml           # registers the built-in Git plugin
+├── billing.patch.yml       # registers the cost plugin dsh-cost-meter
+├── updater.patch.yml       # registers the version/update-check plugin
+├── skills-hub.patch.yml   # registers the global skills library plugin dsh-skills
+├── mcp-settings.patch.yml  # registers the MCP service management plugin
+├── vision.patch.yml        # registers the vision plugin dsh-vision-router v1.7.6 (not taking over llm-deepseek)
+├── theme-blackgold.patch.yml # registers the black-gold theme plugin (@frostgao/dsh-theme-blackgold)
+├── prune.sh                # node_modules slimming script
+├── build.sh                # one-click build
+├── plugins/                # bundled plugin source (copied into backend node_modules at build)
+└── package.json            # declares only the @deepseek-ai/dsh dependency
 ```
 
-## 构建
+## Size Comparison (measured)
 
-依赖：macOS + Xcode 命令行工具（`swiftc`/`codesign`）+ Node.js（用于打包运行时与装依赖）。
+| Version | Build command | App bundle | Backend | DMG | Notes |
+|---|---|---|---|---|---|
+| **Full** | `./build.sh --dmg` | 240M | 235M | ~79 MB | Includes 30+ providers (Pi.ai / Anthropic / Google / OpenAI…; llm-pi-ai lazily loaded) |
+| **Slim (lite)** | `KEEP_EXTRA_PROVIDERS=0 ./build.sh --dmg` | 203M | 200M | ~73 MB | DeepSeek only; multi-provider SDKs & telemetry removed |
 
-```bash
-cd desktop
-./build.sh                          # 默认：完整多供应商版（包含 Pi.ai / Mistral / Anthropic / Google / AWS Bedrock / OpenAI 等全部 SDK）
-KEEP_EXTRA_PROVIDERS=0 ./build.sh   # 最小版：仅 DeepSeek，约小 110 MB
-```
+The ~37M saved by the slim build mostly comes from removing the Pi.ai multi-provider SDK stack
+(`@earendil-works/pi-ai` and its `@mistralai`/`@google`/`@anthropic-ai`/`@aws-sdk`/`@opentelemetry`/`openai`
+deps), session telemetry, non-darwin-arm64 native binaries, and non-runtime files
+(`.ts`/`.d.ts`/`.map`/third-party docs), plus stripping Node debug symbols (`strip -x`). Both reuse
+the system WKWebView (no Chromium), far smaller than an Electron build.
 
-首次构建会 `npm install --omit=dev` 安装 `@deepseek-ai/dsh` 的生产依赖。
+> After a full build, Settings → Models → **Add Provider** enables amazon-bedrock / anthropic / google /
+> google-vertex / mistral / openai / openrouter / xai / groq / nvidia and 30+ more (the llm-pi-ai plugin
+> loads lazily and activates once a provider is configured).
 
-> `build.sh` 默认 `export KEEP_EXTRA_PROVIDERS=1`（保留多供应商 SDK 与 `llm-pi-ai` 行启用）。
-> 设 `KEEP_EXTRA_PROVIDERS=0` 走精简路径：`prune.sh` 会删除 Pi.ai 相关 SDK，`prune.patch.yml` 把 `llm-pi-ai` 行置为 `disabled`。
+## How It Works
 
-## 体积是怎么省出来的（仅 KEEP_EXTRA_PROVIDERS=0 时）
+1. On launch, the Swift shell spawns `Contents/Resources/backend/node launcher.mjs` via `Process`.
+2. `launcher.mjs` sets the app's data dir to a dedicated `DSH_HOME`
+   (fixed to `~/Library/Application Support/DeepSeekHarness`; the shell **strips an inherited
+   `DSH_HOME`** from the launcher env so the app always uses its own home, fully isolated from the
+   CLI's `~/.dsh`; running `launcher.mjs` directly still honors a `DSH_HOME` override), symlinks the
+   bundled plugins into `profiles/node_modules`, then starts
+   `dsh web --patch <overlays>.patch.yml --host 127.0.0.1 --port 0`, polls until the front-end answers,
+   and prints `DSH_READY=http://127.0.0.1:<port>` to stdout.
+3. The shell loads that URL into the `WKWebView`.
+4. User data (config, credentials, sessions, profile, plugins, skills) lives in the **separate** `DSH_HOME`,
+   fully isolated from the CLI `dsh`'s `~/.dsh`.
+5. On quit, the shell sends `SIGTERM` to the launcher, which forwards it to `dsh web` for a clean exit.
 
-1. **原生 WKWebView 壳**：复用系统 WebKit，不打包 Chromium（省 ~150 MB）。
-2. **精简 node_modules**（`prune.sh`，仅最小构建时从 ~307 MB → ~94 MB）：
-   - 去掉 Pi.ai 多供应商 SDK 栈（`@earendil-works/pi-ai` 及其拖入的
-     `@mistralai`/`@google`/`@anthropic-ai`/`@aws-sdk`/`@opentelemetry`/`openai`，约 110 MB），
-     通过 `prune.patch.yml` 把 `llm-pi-ai` 行置为 `disabled`；默认模型仍是
-     `deepseek-official`（`deepseek-v4-flash`）。
-   - 去掉 session 遥测（`@opentelemetry`，默认即关闭）。
-   - 去掉非 darwin-arm64 原生二进制（node-pty 的 win32/linux/x64 预编译、sharp-wasm32）。
-   - 去掉 `.ts`/`.d.ts`/`.map`/第三方 `.md`/LICENSE/test/examples/CI 目录等非运行文件。
-3. **Node 运行时 `strip -x`**：去掉本地符号表（~21 MB），保留原生 addon（sharp、koffi、
-   node-pty、better-sqlite3）链接所需的导出符号。注意不能用完整 `strip`，否则 addon
-   dlopen 时找不到符号而段错误。
+The backend listens only on a random `127.0.0.1` port, avoiding conflicts and LAN exposure.
 
-> 默认 `./build.sh` 产物约 290 MB，包含全部多供应商 SDK；构建后在 设置 → 模型 → **添加提供方**
-> 里可启用 amazon-bedrock / anthropic / google / google-vertex / mistral / openai / openrouter /
-> xai / groq / nvidia 等 30+ 提供方（llm-pi-ai 插件按需休眠加载，配置 provider 即可激活）。
+## Version & Update Check
 
-## 工作原理
+The app shows the current DeepSeek Harness version in the **top-right corner** (the `@deepseek-ai/dsh`
+package version, e.g. `v0.1.1-rc.2`). Under **Settings → Check for Updates**:
 
-1. 应用启动后，Swift 壳用 `Process` 拉起 `Contents/Resources/backend/node launcher.mjs`。
-2. `launcher.mjs` 先把应用的用户数据目录定为专用的 `DSH_HOME`
-   （固定为 `~/Library/Application Support/DeepSeekHarness`；壳层在拉起后端时会**剥离
-   环境里继承的 `DSH_HOME`**，确保应用始终使用专属 home，与命令行 `dsh` 的 `~/.dsh`
-   完全隔离；直接运行 `launcher.mjs` 时仍可用 `DSH_HOME` 环境变量覆盖），
-   并把内置插件在 `profiles/node_modules` 里建好软链，然后启动
-   `dsh web --patch <各 overlay>.patch.yml --host 127.0.0.1 --port 0`，
-   轮询确认前端可访问后，向 stdout 打一行 `DSH_READY=http://127.0.0.1:<port>`。
-3. 壳读到 `DSH_READY` 后把该地址加载进 `WKWebView`。
-4. 用户数据（配置、凭据、会话、profile、插件、技能）落在**独立的** `DSH_HOME`，
-   与命令行 `dsh` 的 `~/.dsh` 完全隔离，互不干扰。
-5. 退出应用时，壳向 launcher 发 `SIGTERM`，launcher 转发给 `dsh web` 完成优雅退出。
+- **Check for updates**: compares against the latest `@deepseek-ai/dsh` on the npm registry;
+- **Update now**: downloads the latest closure (dsh + all its `@deepseek-ai/*` deps) and atomically
+  replaces the bundle's `node_modules`, then restarts the app (re-signed to keep the arm64 ad-hoc
+  signature valid).
 
-后端只监听 `127.0.0.1` 的随机端口，避免端口冲突与暴露到局域网。
+This is a built-in plugin (same pattern as git):
 
-## 版本号与检查更新
-
-应用在**窗口右上角**常驻显示当前 DeepSeek Harness 版本号（`@deepseek-ai/dsh` 包版本，
-如 `v0.1.1-rc.2`）。「设置 → 检查更新」里可以：
-
-- **检查更新**：对比 npm registry 上 `@deepseek-ai/dsh` 的最新版本；
-- **立即更新**：后台下载最新闭包（dsh 及其全部 `@deepseek-ai/*` 依赖）并原子替换进
-  应用包内的 `node_modules`，完成后自动重启应用（重启前会重新签名，保证 arm64
-  上的 ad-hoc 签名仍然有效）。
-
-实现是内置插件（与 git 同模式）：
-
-| 文件 | 作用 |
+| File | Role |
 |---|---|
-| `plugins/dsh-updater/` | 宿主半部：`/updater` JSON API（version / check / update / status） |
-| `plugins/dsh-client-ui-updater/` | 浏览器半部：右上角版本徽标 + 设置里的「检查更新」区块 |
-| `updater.patch.yml` | 注册这两个插件（launcher 启动时经 `--patch` 传入） |
+| `plugins/dsh-updater/` | Host half: `/updater` JSON API (version / check / update / status) |
+| `plugins/dsh-client-ui-updater/` | Browser half: top-right version badge + "Check for Updates" section in Settings |
+| `updater.patch.yml` | registers these two plugins (passed via `--patch` at launcher start) |
 
-### 如何真正升级 Harness
+### How to Actually Upgrade Harness
 
-运行时「**检查更新**」只替换**当前应用包内**那份 `node_modules`，**不会写回桌面源码依赖**。
-因此**只要重新运行 `./build.sh`，版本就会回到源码锁定的版本**（`build.sh` 每次都从
-`desktop/node_modules` 重新拷贝）。
+The in-app "**Check for Updates**" replaces only the `node_modules` inside the **current app bundle**;
+it does **not** write back to the desktop source dependencies. So **just re-running `./build.sh` resets
+the version to the source-pinned one** (`build.sh` copies from `desktop/node_modules` each time).
 
-要**永久升级**（让 `./build.sh` 稳定产出新版本）：
+To **permanently upgrade** (so `./build.sh` keeps producing the new version):
 
 ```bash
 cd desktop
-# 1) 把 package.json 里 @deepseek-ai/dsh 的版本号改成目标版本（如 0.1.1-rc.2）
-# 2) 用可用的 node/npm 重装依赖（系统 node 可能因 icu4c 损坏，用 nvm 的 node）
+# 1) bump @deepseek-ai/dsh in package.json to the target version (e.g. 0.1.1-rc.2)
+# 2) reinstall deps with a working node/npm (system node may be broken by an icu4c change; use nvm's node)
 $HOME/.nvm/versions/node/v22.19.0/bin/npm install --omit=dev --no-audit --no-fund
-# 3) 重建
+# 3) rebuild
 ./build.sh
 ```
 
-`./build.sh` 产出应用包的 `@deepseek-ai/dsh` 版本 = `desktop/node_modules` 里的版本，
-所以以 `package.json` 声明的版本为准。
+The `@deepseek-ai/dsh` version in the produced app = the version in `desktop/node_modules`, i.e. what
+`package.json` declares.
 
-## Git 源码管理
+## Git Source Management
 
-内置的 Git 插件提供**全屏 Git 面板**：入口是**对话（轨迹）视图右侧页签栏的「Git」页签**
-（点击后用面板替换聊天/轨迹区域），Esc / 关闭按钮退出。
-打开时**自动关联当前会话的工作目录**（`useSessions` 读取当前会话 cwd）；
-顶部栏有「刷新」按钮。
+The built-in Git plugin provides a **full-screen Git panel**: open it via the **"Git" tab** in the
+conversation (trajectory) view's tab bar (replaces the chat/trajectory area), and quit with Esc / the
+close button. On open it **auto-binds to the current session's working directory** (`useSessions` reads
+the current session cwd); the top bar has a "Refresh" button.
 
-功能：
+Features:
 
-- **状态分区**：暂存区 / 未暂存区 / 未跟踪文件分栏列出；**checkbox 即暂存开关**——
-  勾选未暂存文件即暂存，取消已暂存文件的勾选即取消暂存；「未暂存」标题旁有全选框，
-  一键全部暂存 / 全部取消暂存。
-- **丢弃改动**：每行右侧 `⋯` 菜单 →「丢弃改动」恢复工作区改动（未跟踪文件不提供）；
-  「移除文件」从工作区删除该文件（含未跟踪文件，二次确认后不可恢复）。
-- **提交**：**只提交已暂存（勾选）的文件**（`提交已暂存 (N)`），未暂存的不受影响；
-  支持 amend 上次提交；**提交说明为多行输入**（Enter 换行、随内容自动增高，⌘/Ctrl+Enter
-  或「提交」按钮提交），下方输出回显。
-- **分支切换**：顶部分支按钮弹出分支菜单，按「本地 / 远程」分组**列出全部本地与远程
-  分支，点击整行即切换**（远程分支点选后自动创建同名本地跟踪分支，本地同名存在时回退切
-  本地）；当前分支高亮带圆点、不可点。菜单为纵向窄列表、行无边框；行内保留重命名 ✎ /
-  删除 ✕（二次确认）。「新建」（从选中提交建分支）与「合并」（合并选中提交到当前分支）
-  在**提交详情工具栏**，样式与「刷新」一致。
-- **远程操作**：推送（-u 设上游）、拉取（--ff-only）、Fetch --prune。
-- **历史**：图形化提交图（Git Graph 风格：主线靠左、分支向右分叉后竖直向下，
-  每条分支按列着色；HEAD 为空心圆，其余为实心圆点），点击提交看完整 diff；支持
-  文件级历史（`git log -- <file>`）与 blame。
-- **文件对比**：点击文件查看「工作区 vs HEAD」内容对照（含文件历史）。
-- **面板布局**：第 2 列上方为提交历史（占满剩余高度），最下方为提交表单。
-- **差异视图**：diff 按文件分类展示（文件头 + 新增/删除/重命名/二进制徽标），修改位置
-  用绿色/红色色块标出，每行标注新旧行号，hunk 头显示 `@@ -旧行 +新行 @@`。
+- **Status sections**: staged / unstaged / untracked files in columns; **checkbox = stage toggle** —
+  check an unstaged file to stage it, uncheck a staged one to unstage; the "Unstaged" header has a
+  select-all checkbox for stage/unstage-all.
+- **Discard changes**: each row's `⋯` menu → "Discard" restores worktree changes (not for untracked);
+  "Remove file" deletes it from the worktree (incl. untracked, with confirmation, irreversible).
+- **Commit** (the git-commit button): **commits only staged (checked) files**; staged-only, unstaged
+  untouched; supports amending the last commit; **message input is multi-line** (Enter newline,
+  auto-grows, ⌘/Ctrl+Enter or the Commit button), with output echo below.
+- **Branch switching**: the top branch button opens a menu grouped by **Local / Remote** listing every
+  branch; **click a row to switch** (a remote branch auto-creates a same-named local tracking branch;
+  if the local name already exists it falls back to switching local); the current branch is highlighted
+  with a dot and not clickable. The menu is a narrow vertical list with borderless rows; per-row rename ✎
+  and delete ✕ (confirmed) remain. "New" (branch from the selected commit) and "Merge" (merge the selected
+  commit into current) live in the **commit-detail toolbar**, styled like "Refresh".
+- **Remote ops**: push (-u sets upstream), pull (--ff-only), Fetch --prune.
+- **History**: a Git-Graph-style commit graph (mainline left, branches fork right and run down, each
+  branch colored per column; HEAD is a hollow circle, others solid), click a commit for the full diff;
+  supports per-file history (`git log -- <file>`) and blame.
+- **File diff**: click a file for "worktree vs HEAD" comparison (with file history).
+- **Layout**: commit history occupies the top of the second column (fills remaining height); the commit
+  form is at the bottom.
+- **Diff view**: diffs grouped by file (file header + add/delete/rename/binary badges); changed lines
+  marked green/red; old/new line numbers per row; hunk headers show `@@ -old +new @@`.
 
-| 文件 | 作用 |
+| File | Role |
 |---|---|
-| `plugins/dsh-git/` | 宿主半部：`/git` JSON API（status/stage/diff/commit/branch/merge/log/blame/cat 等 28 个操作） |
-| `plugins/dsh-client-ui-git/` | 浏览器半部：侧边栏 Git 入口 + 全屏面板 UI |
-| `git.patch.yml` | 注册这两个插件（launcher 经 `--patch` 传入） |
+| `plugins/dsh-git/` | Host half: `/git` JSON API (28 ops: status/stage/diff/commit/branch/merge/log/blame/cat…) |
+| `plugins/dsh-client-ui-git/` | Browser half: Git entry + full-screen panel UI |
+| `git.patch.yml` | registers these two plugins (via `--patch`) |
 
-## 识图（dsh-vision-router）
+**Panel preview:**
 
-内置第三方插件 **dsh-vision-router**（见其
-[GitHub 仓库](https://github.com/ysr666/dsh-vision-router)，内置 **v1.7.6**），
-给纯文本模型（DeepSeek 等）提供**像素保真的图片理解**：
+![Git panel: branch bar + commit history + changed files + diff view](./docs/screenshots/git-panel.png)
 
-- **原图直看**：图片轮交给视觉模型看原图，DeepSeek 始终负责思考；图片轮就像普通
-  **工具调用**（`vision_ground` → `vision_crop` → `vision_describe` → `vision_pixel_diff`
-  … 可连续多步迭代定位/裁剪/比对/修复），可定位、可验证。
-- **默认免费**：视觉工具兜底 5 个 OVHcloud 匿名视觉模型，免注册免 Key（每 IP、
-  每模型 2 次/分钟）；用户自备视觉模型（智谱/百炼/OpenRouter 等）优先调用。
-- **14 个深看工具**：Q&A / 定位 / 裁剪 / 像素比对 / 取色 / OCR / SVG 矢量化 / 抠图 /
-  HTML 截图 / 长截图识读等；无 Python，基于 sharp / potrace / tesseract / 系统 Chrome。
-- **设置**：设置 → 插件 → 插件配置 → **「Vision Router」**卡片；接管官方路由与否由
-  「隐身模式」开关决定（默认关，官方 `llm-deepseek` 行保持启用）。
-- **不写日志**：指向视觉工具的改写只发生在模型输入层，会话日志里仍是原图。
+## Vision (dsh-vision-router)
 
-| 文件 | 作用 |
+Bundled third-party plugin **dsh-vision-router** (see its
+[GitHub repo](https://github.com/ysr666/dsh-vision-router), bundled at **v1.7.6**), giving text-only models
+(DeepSeek etc.) **pixel-faithful image understanding**:
+
+- **See the original image** (no lossy description bridge): image turns are handed to a vision model,
+  DeepSeek always does the reasoning; an image turn is just a normal **tool call** that could iterate
+  (`vision_ground` → `vision_crop` → `vision_describe` → `vision_pixel_diff`…) — locatable, verifiable.
+- **Free by default**: vision tools fall back to 5 OVHcloud anonymous vision models, no key needed
+  (2 req/min per IP per model); your own vision models (Zhipu/Bailian/OpenRouter…) take priority.
+- **14 in-depth tools**: Q&A / locate / crop / pixel-diff / colors / OCR / SVG trace / cutout /
+  HTML screenshot / long-screenshot read, etc.; no Python — based on sharp / potrace / tesseract / system Chrome.
+- **Settings**: Settings → Plugins → Plugin config → **"Vision Router"** card; whether it takes over the
+  official route is set by the "Stealth mode" toggle (off by default, official `llm-deepseek` row stays).
+- **No log pollution**: the rewrite toward vision tools happens only at the model input layer; the session
+  log still shows the original image.
+
+| File | Role |
 |---|---|
-| `plugins/dsh-vision-router/` | 插件源码（v1.7.6：宿主路由 + 14 个视觉工具 + 浏览器半设置卡） |
-| `vision.patch.yml` | 注册该插件 + 附件准入放宽（20 MiB / 100 MP / 单边 10000 px）；不接管 llm-deepseek） |
+| `plugins/dsh-vision-router/` | plugin source (v1.7.6: host route + 14 vision tools + browser settings card) |
+| `vision.patch.yml` | registers the plugin + relaxed attachment policy (20 MiB / 100 MP / 10000 px per edge; not taking over llm-deepseek) |
 
-## 全局技能库（dsh-skills）
+## Global Skills Library (dsh-skills)
 
-内置第三方插件 **dsh-skills**（[CocoSgt/dsh-skills](https://github.com/CocoSgt/dsh-skills)）。
-把散落的技能汇成全局库：Claude Code 的
-`~/.claude/skills`、项目目录、`.skill` 包等统一入库到 `$DSH_HOME/skills`（官方
-skill-filesystem 默认扫描根，watcher 实时），入库即出现在输入框的「/」斜杠菜单；
-设置页侧栏有「技能」导航页。
+Bundled third-party plugin **dsh-skills** ([CocoSgt/dsh-skills](https://github.com/CocoSgt/dsh-skills)).
+Centralizes scattered skills: Claude Code's `~/.claude/skills`, project dirs, `.skill` packages, etc.,
+imported into `$DSH_HOME/skills` (the official skill-filesystem default scan root, live watcher); imported
+skills appear in the input's "/" slash menu; Settings has a "Skills" nav page.
 
-功能：
+Features:
 
-- **两种入库身份**：引用（符号链接，编辑即编辑来源）/ 副本（整树拷贝，独立演化）。
-- **全局技能页签**：＋ 新建技能、上传 `.skill`、可视化筛选；每张卡带身份徽标、
-  资源文件数、非默认调用策略；「编辑 SKILL.md」内联编辑、导出 `.skill` 整树打包、
-  打开目录、删除（引用只删链接，两步确认）。
-- **发现页签**：扫描目录 chips 就地管理，结果可「引用 / 复制」，支持「全部引用」批量。
-- 全部文案经官方 locale 服务中英渲染；同系列搭配 `dsh-attachments` / `dsh-inspector`。
+- **Two import identities**: reference (symlink, edits edit the source) / copy (full tree, evolves independently).
+- **Global skills tab**: + new skill, upload `.skill`, visual filter; each card shows identity badge,
+  resource file count, non-default invocation policy; "Edit SKILL.md" inline editing, export `.skill`
+  full-tree package, open dir, delete (reference only removes the link, two-step confirm).
+- **Discover tab**: scan directory chips in place, then "reference / copy" the results; supports "reference all" batch.
+- All copy rendered via the official locale service (Chinese/English); pairs with `dsh-attachments` / `dsh-inspector`.
 
-| 文件 | 作用 |
+| File | Role |
 |---|---|
-| `plugins/dsh-skills/` | 插件源码（宿主半：`skillHub` Typert 网关：状态 / import（引用|复制）/ edit / export；浏览器半：设置页技能中枢） |
-| `skills-hub.patch.yml` | 注册该插件（launcher 经 `--patch` 传入） |
+| `plugins/dsh-skills/` | plugin source (host: `skillHub` Typert gateway: status / import (reference|copy) / edit / export; browser: Settings skills hub) |
+| `skills-hub.patch.yml` | registers the plugin (via `--patch`) |
 
+## MCP Service Management
 
-## MCP 服务管理
+Bundled third-party plugin **@opendsh/dsh-plugin-setting-mcp** (npm) adds a "**MCP Services**" entry in
+Settings to **view, add, edit, remove, enable/disable** MCP services (stdio / Streamable HTTP); clicking
+"Save" hot-applies (no restart). It manages the `@deepseek-ai/dsh-mcp-client` loader entries and persists
+the service set back to the profile's `cordis.patch.yml`.
 
-内置了第三方插件 **@opendsh/dsh-plugin-setting-mcp**（npm 包），在设置页加一个
-「**MCP 服务**」入口，可**查看、新增、修改、移除、启用/停用** MCP 服务（stdio /
-Streamable HTTP），点「保存」即热更新生效（无需重启进程）。它管理的是
-`@deepseek-ai/dsh-mcp-client` 的 loader 条目，并把服务集合持久化写回 profile 的
-`cordis.patch.yml`。
-
-| 文件 | 作用 |
+| File | Role |
 |---|---|
-| `plugins/@opendsh/dsh-plugin-setting-mcp/` | 插件源码（宿主半：typert `ctx.mcp` 服务；浏览器半：设置页 MCP 服务管理） |
-| `mcp-settings.patch.yml` | 注册该插件（launcher 经 `--patch` 传入） |
+| `plugins/@opendsh/dsh-plugin-setting-mcp/` | plugin source (host: typert `ctx.mcp` service; browser: Settings MCP service management) |
+| `mcp-settings.patch.yml` | registers the plugin (via `--patch`) |
 
+## User Plugins (Plan C: runtime install, no recompile)
 
-## 用户插件（方案 C：运行时安装，不重编译）
+The `dsh` core natively supports user-level plugins: install them into the **profile**
+(`$DSH_HOME/profiles/web`)'s `node_modules`; declaring `dsh.bundle` auto-adds them to the layer stack
+(`$DSH_HOME` is the app's own user dir, default `~/Library/Application Support/DeepSeekHarness`, overridable
+via `DSH_HOME`). This mechanism is built into the app:
 
-内核的 `dsh` 原生支持用户级插件：把应用装进 **profile**（`$DSH_HOME/profiles/web`）里的
-`node_modules`，通过声明 `dsh.bundle` 自动加入 layer 栈（`$DSH_HOME` 是应用自己的用户目录，
-默认 `~/Library/Application Support/DeepSeekHarness`，可设 `DSH_HOME` 覆盖）。本应用已内置该机制：
-
-- **运行时自带的 node/pnpm**：`launcher.mjs` 启动时用 `desktop-bin.mjs` 生成
-  `$DSH_HOME/.desktop-bin/{node,pnpm}` shim 并前置 PATH，`dsh plugin` 因此能在
-  打包后的应用里跑通，无需系统 Node / pnpm。
-- **一键 CLI**（`add-plugin.sh`）：
+- **Bundled node/pnpm**: on start `launcher.mjs` uses `desktop-bin.mjs` to generate `$DSH_HOME/.desktop-bin/{node,pnpm}`
+  shims and prepends them to PATH, so `dsh plugin` works inside the packaged app without a system Node/pnpm.
+- **One-command CLI** (`add-plugin.sh`):
   ```sh
-  ./add-plugin.sh --runtime add <npm包名或本地目录>   # 装
-  ./add-plugin.sh --runtime list                      # 列出已装的 bundle
-  ./add-plugin.sh --runtime remove <包名>             # 卸
+  ./add-plugin.sh --runtime add <npm-package-or-local-dir>   # install
+  ./add-plugin.sh --runtime list                              # list installed bundles
+  ./add-plugin.sh --runtime remove <package>                  # remove
   ```
-- **不重编译**：用户插件存在 `$DSH_HOME`,`./build.sh` 重建/升级只重写应用包内的
-  node_modules，不会清掉用户已装插件。要装的是声明了 `dsh.bundle` 的 bundle 插件
-  （`package.json` 带 `dsh.bundle.patch` + `cordis.patch.yml`）。
+- **No recompile**: user plugins live under `$DSH_HOME`; `./build.sh` rebuild/upgrade only rewrites the
+  bundle's node_modules and won't clear user-installed plugins. Install bundle plugins that declare
+  `dsh.bundle` (package.json with `dsh.bundle.patch` + `cordis.patch.yml`).
 
-> `--runtime add` 会传 `-w`（profile 是 pnpm workspace 根，pnpm 需要该标志）。
-> `remove`/`list` 用包全名（如 `@scope/name`），以 `list` 输出为准。
+> `--runtime add` passes `-w` (the profile is a pnpm workspace root; pnpm needs it).
+> `remove`/`list` use the full package name (e.g. `@scope/name`); trust `list` output.
 >
-> **两类插件都支持**：声明 `dsh.bundle` 的插件（如 git/updater）装完自动加入 bundle 层；
-> 只声明 `dsh.client` 的纯前端插件（如 `@frostgao` 的主题插件）`dsh plugin add` 不会自动激活，
-> `plugins.mjs` 会在 profile 的用户层 `cordis.patch.yml` 里自动补一条激活 row，移除时一并清理。
+> **Both plugin kinds work**: bundle plugins (e.g. git/updater) auto-join the bundle layer after install;
+> browser-only plugins that only declare `dsh.client` (e.g. `@frostgao` themes) are NOT auto-activated by
+> `dsh plugin add` — `plugins.mjs` appends an activation row to the profile's user-layer
+> `cordis.patch.yml` and cleans it on remove.
 
-## 黑金主题（@frostgao/dsh-theme-blackgold）
+## Black-Gold Theme (@frostgao/dsh-theme-blackgold)
 
-内置 `@frostgao/dsh-theme-blackgold`（@frostgao 出品的配搭主题），作为**应用内插件**打包
-（源码在 `plugins/@frostgao/dsh-theme-blackgold`），把 Web 界面重绘成**黑金配色**
-（黑白底 + 金色强调，浅色 / 深色两套）：
+Bundled `@frostgao/dsh-theme-blackgold` (a companion theme by @frostgao), shipped as an in-app plugin
+(source in `plugins/@frostgao/dsh-theme-blackgold`), repainting the web UI in **black-and-gold**
+(black/white base + gold accents, light/dark):
 
-- **品牌标**：鲸鱼 logo 金色描边 + 悬停微动；`HARNESS` 徽标黑底金字 + 周期性高光扫过。
-- **页面强调色**：发送键、激活的会话/轨迹/工作区标签、光标、高亮等金色化。
-- **细节**：侧栏运行点金色跑动、新会话光环淡金、ContextMeter 等。
-- 纯演示层覆盖（走 `dsh-client-ui-theme` 的 token 覆盖），尊重 `prefers-reduced-motion`。
+- **Brand mark**: whale logo gold outline + hover micro-motion; `HARNESS` badge black-on-gold with a periodic shine sweep.
+- **Page accents**: send key, active session/trajectory/workspace tabs, caret, highlights turned gold.
+- **Details**: sidebar running dot gold, new-session halo faint gold, ContextMeter, etc.
+- Pure presentation-layer override (via `dsh-client-ui-theme` token overrides), respects `prefers-reduced-motion`.
 
-该插件是**客户端专属**（`immediately: true`，无需在设置里开开关），随插件清单在启动时
-自动加载生效。纯 ESM、无原生二进制，依赖的 `@deepseek-ai/dsh-client-ui-theme` 为 0.1.1-rc.2 自带。
+The plugin is client-only (`immediately: true`, no toggle needed); loaded at start with the plugin manifest.
+Pure ESM, no native binary; its `@deepseek-ai/dsh-client-ui-theme` dep ships with 0.1.1-rc.2.
 
-| 文件 | 作用 |
+| File | Role |
 |---|---|
-| `plugins/@frostgao/dsh-theme-blackgold/` | 插件源码（宿主半为空占位；浏览器半：黑金 token 覆盖） |
-| `theme-blackgold.patch.yml` | 注册该插件（launcher 经 `--patch` 传入） |
+| `plugins/@frostgao/dsh-theme-blackgold/` | plugin source (host half is a placeholder; browser: black-gold token override) |
+| `theme-blackgold.patch.yml` | registers the plugin (via `--patch`) |
 
-## 会话费用统计（dsh-cost-meter）
+## Session Cost Meter (dsh-cost-meter)
 
-内置 **dsh-cost-meter**（[Han-1413141/dsh-cost-meter](https://github.com/Han-1413141/dsh-cost-meter)，
-v1.5.38），提供会话级费用统计：
+Bundled **dsh-cost-meter** ([Han-1413141/dsh-cost-meter](https://github.com/Han-1413141/dsh-cost-meter),
+v1.5.38), providing session-level cost stats:
 
-- **费用**：本会话成本、当日费用、历史记录；内置 90+ 模型价格目录自动匹配，与官方价格一键同步。
-- **余额 / 额度**：官方余额、可配自定义 Provider 余额（任意 HTTP 端点）与余额进度条；主流
-  Coding Plan 订阅额度查询与显示（7 家，含 SCNet Token Plan 本地 Credits 计量）。
-- **峰谷计价**：峰谷时段显示，切换前弹窗 / 系统通知提醒（位置 / 提前量 / 类型可配）。
-- 界面中英双语；配置在 设置 → 插件 → dsh-cost-meter。
+- **Cost**: per-conversation cost, daily totals, history; built-in 90+ model price catalog auto-matches,
+  one-click sync with official prices.
+- **Balance / quota**: official balance, configurable custom provider balance (any HTTP endpoint) with a
+  balance progress bar; mainstream Coding Plan quota queries & display (7 vendors, incl. local Credits
+  metering for the SCNet Token Plan).
+- **Off-peak pricing**: on/off-peak periods, pre-switch popup / system-notification reminders (position /
+  lead time / type configurable).
+- Bilingual (Chinese/English) UI; configure in Settings → Plugins → dsh-cost-meter.
 
-| 文件 | 作用 |
+| File | Role |
 |---|---|
-| `plugins/dsh-cost-meter/` | 插件源码（宿主：costMeter 服务 + ledger；浏览器半：费用展示与设置） |
-| `billing.patch.yml` | 注册该插件（launcher 经 `--patch` 传入；`name:` 必须带引号，linkBundledPlugins 只收集带引号的 name） |
+| `plugins/dsh-cost-meter/` | plugin source (host: costMeter service + ledger; browser: cost display & settings) |
+| `billing.patch.yml` | registers the plugin (via `--patch`; the `name:` must be quoted — linkBundledPlugins only collects quoted names) |
 
+The launcher also prepends the backend dir (with the bundled `node` binary) to PATH, so vision subprocesses
+use the app's own Node rather than a possibly-broken system Node.
 
-launcher 还会把后端目录（含内置 `node` 二进制）放在 `PATH` 最前，确保插件跑视觉
-子进程时用的是应用自带的 Node，而非可能损坏的系统 Node。
+## License
 
-## 许可证
-
-本项目（`desktop/`）采用 **MIT License**（见 [LICENSE](LICENSE)）。
-内置的各第三方插件与上游 `@deepseek-ai/dsh` 均为 MIT（各自保留其版权声明与 LICENSE）。
+This project (`desktop/`) is licensed under the **MIT License** (see [LICENSE](LICENSE)).
+All bundled third-party plugins and the upstream `@deepseek-ai/dsh` are MIT (each retains its own copyright
+notice and LICENSE).
