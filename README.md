@@ -83,6 +83,25 @@ desktop/
 > google-vertex / mistral / openai / openrouter / xai / groq / nvidia 等 30+ 提供方
 > （llm-pi-ai 插件按需休眠加载，配置 provider 即可激活）。
 
+## 内存开销对比（实测）
+
+桌面端不止**安装包更小**，**运行时内存也更省**。实测（同为使用中的桌面端 vs 浏览器访问、且 Chrome 已清空标签）：
+
+| | 桌面客户端 | Web 版（浏览器访问） |
+|---|---|---|
+| 服务端 | 后端 node 160 MB | 全新 web node 177 MB |
+| 渲染 | WKWebView 壳 98 MB（已内置） | 浏览器（Chrome）约 1150 MB |
+| **合计** | **约 258 MB** | **约 1.33 GB** |
+
+**结论**：桌面端约为 Web 版的 **1/5**，省约 **1GB** 内存。即使 Chrome 清空所有标签页，
+浏览器仍有约 1150MB 的**基座开销**（浏览器 / GPU / 网络 / 扩展等进程）——而桌面端把这套
+"渲染"吸收进了 98MB 的 WKWebView 壳里，后端一起打包成**一个应用**，省掉了"单独跑一个
+浏览器"的整套内存。**安装包瘦身 + 内存瘦身，双赢。**
+
+> 口径：桌面 = 后端 node + WKWebView 壳（一体化，刚启动的稳定值）；Web = 全新 web 服务 +
+> 整个浏览器（含少量残留标签 / 扩展 / Chrome 基座，非纯 DSH 页面）。同为基于 WKWebView /
+> Chromium 的渲染，桌面端把浏览器进程的开销省掉了。
+
 ## 工作原理
 
 1. 应用启动后，Swift 壳用 `Process` 拉起 `Contents/Resources/backend/node launcher.mjs`。

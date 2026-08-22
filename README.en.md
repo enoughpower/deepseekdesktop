@@ -87,6 +87,27 @@ the system WKWebView (no Chromium), far smaller than an Electron build.
 > google-vertex / mistral / openai / openrouter / xai / groq / nvidia and 30+ more (the llm-pi-ai plugin
 > loads lazily and activates once a provider is configured).
 
+## Memory Footprint Comparison (measured)
+
+The desktop app is slimmer not only in **installer size** but also in **runtime memory**. Measured
+with the desktop in use vs. the web version opened in a browser (Chrome tabs cleared):
+
+| | Desktop client | Web version (in browser) |
+|---|---|---|
+| Server | backend node 160 MB | fresh web node 177 MB |
+| Rendering | WKWebView shell 98 MB (built-in) | browser (Chrome) ~1150 MB |
+| **Total** | **~258 MB** | **~1.33 GB** |
+
+**Conclusion**: the desktop app is roughly **1/5** of the web version's total, saving about **1 GB** of RAM.
+Even with all Chrome tabs cleared, the browser carries ~1150 MB of **base overhead** (browser / GPU /
+network / extensions), while the desktop folds that "rendering" into a 98 MB WKWebView shell and ships the
+backend together as **one app**, eliminating the need to run a separate browser. **Slim install + slim memory,
+a win-win.**
+
+> Rounding: desktop = backend node + WKWebView shell (all-in-one, stable shortly after launch); web = fresh
+> web server + the whole browser (incl. residual tabs / extensions / Chrome base, not just the DSH page).
+> Both render with WebKit/Chromium; the desktop simply avoids the browser process overhead.
+
 ## How It Works
 
 1. On launch, the Swift shell spawns `Contents/Resources/backend/node launcher.mjs` via `Process`.
