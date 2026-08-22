@@ -28,7 +28,7 @@ desktop/
 ├── add-plugin.sh           # 一键装内置插件 / --runtime 走用户级安装
 ├── prune.patch.yml         # 禁用被裁剪掉的插件行（llm-pi-ai、telemetry）
 ├── git.patch.yml           # 注册内置 Git 插件
-├── billing.patch.yml       # 注册内置用量插件 dsh-usage-cost（@frostgao）
+├── billing.patch.yml       # 注册内置费用插件 dsh-cost-meter
 ├── updater.patch.yml       # 注册内置版本号/检查更新插件
 ├── skills-hub.patch.yml   # 注册内置全局技能库插件 dsh-skills
 ├── mcp-settings.patch.yml  # 注册内置 MCP 服务管理插件
@@ -78,7 +78,9 @@ KEEP_EXTRA_PROVIDERS=0 ./build.sh   # 最小版：仅 DeepSeek，约小 110 MB
 
 1. 应用启动后，Swift 壳用 `Process` 拉起 `Contents/Resources/backend/node launcher.mjs`。
 2. `launcher.mjs` 先把应用的用户数据目录定为专用的 `DSH_HOME`
-   （默认 `~/Library/Application Support/DeepSeekHarness`，可用环境变量 `DSH_HOME` 覆盖），
+   （固定为 `~/Library/Application Support/DeepSeekHarness`；壳层在拉起后端时会**剥离
+   环境里继承的 `DSH_HOME`**，确保应用始终使用专属 home，与命令行 `dsh` 的 `~/.dsh`
+   完全隔离；直接运行 `launcher.mjs` 时仍可用 `DSH_HOME` 环境变量覆盖），
    并把内置插件在 `profiles/node_modules` 里建好软链，然后启动
    `dsh web --patch <各 overlay>.patch.yml --host 127.0.0.1 --port 0`，
    轮询确认前端可访问后，向 stdout 打一行 `DSH_READY=http://127.0.0.1:<port>`。
@@ -92,7 +94,7 @@ KEEP_EXTRA_PROVIDERS=0 ./build.sh   # 最小版：仅 DeepSeek，约小 110 MB
 ## 版本号与检查更新
 
 应用在**窗口右上角**常驻显示当前 DeepSeek Harness 版本号（`@deepseek-ai/dsh` 包版本，
-如 `v0.1.0-rc.8`）。「设置 → 检查更新」里可以：
+如 `v0.1.1-rc.2`）。「设置 → 检查更新」里可以：
 
 - **检查更新**：对比 npm registry 上 `@deepseek-ai/dsh` 的最新版本；
 - **立即更新**：后台下载最新闭包（dsh 及其全部 `@deepseek-ai/*` 依赖）并原子替换进
@@ -117,7 +119,7 @@ KEEP_EXTRA_PROVIDERS=0 ./build.sh   # 最小版：仅 DeepSeek，约小 110 MB
 
 ```bash
 cd desktop
-# 1) 把 package.json 里 @deepseek-ai/dsh 的版本号改成目标版本（如 0.1.0-rc.8）
+# 1) 把 package.json 里 @deepseek-ai/dsh 的版本号改成目标版本（如 0.1.1-rc.2）
 # 2) 用可用的 node/npm 重装依赖（系统 node 可能因 icu4c 损坏，用 nvm 的 node）
 $HOME/.nvm/versions/node/v22.19.0/bin/npm install --omit=dev --no-audit --no-fund
 # 3) 重建
@@ -129,9 +131,10 @@ $HOME/.nvm/versions/node/v22.19.0/bin/npm install --omit=dev --no-audit --no-fun
 
 ## Git 源码管理
 
-内置的 Git 插件提供**全屏 Git 面板**：点击侧边栏底部的 Git 按钮打开，Esc / 关闭按钮
-退出。打开时**自动关联当前会话的工作目录**（`useSessions` 读取当前会话 cwd），也支持
-在顶部输入任意仓库路径。
+内置的 Git 插件提供**全屏 Git 面板**：入口是**对话（轨迹）视图右侧页签栏的「Git」页签**
+（点击后用面板替换聊天/轨迹区域），Esc / 关闭按钮退出。
+打开时**自动关联当前会话的工作目录**（`useSessions` 读取当前会话 cwd）；
+顶部栏有「刷新」按钮。
 
 功能：
 
@@ -141,8 +144,13 @@ $HOME/.nvm/versions/node/v22.19.0/bin/npm install --omit=dev --no-audit --no-fun
 - **丢弃改动**：每行右侧 `⋯` 菜单 →「丢弃改动」恢复工作区改动（未跟踪文件不提供）；
   「移除文件」从工作区删除该文件（含未跟踪文件，二次确认后不可恢复）。
 - **提交**：**只提交已暂存（勾选）的文件**（`提交已暂存 (N)`），未暂存的不受影响；
-  支持 amend 上次提交；消息输入区 + 输出回显。
-- **分支管理**：新建（可切过去）、切换、重命名、删除（二次确认）、合并（含冲突提示）。
+  支持 amend 上次提交；**提交说明为多行输入**（Enter 换行、随内容自动增高，⌘/Ctrl+Enter
+  或「提交」按钮提交），下方输出回显。
+- **分支切换**：顶部分支按钮弹出分支菜单，按「本地 / 远程」分组**列出全部本地与远程
+  分支，点击整行即切换**（远程分支点选后自动创建同名本地跟踪分支，本地同名存在时回退切
+  本地）；当前分支高亮带圆点、不可点。菜单为纵向窄列表、行无边框；行内保留重命名 ✎ /
+  删除 ✕（二次确认）。「新建」（从选中提交建分支）与「合并」（合并选中提交到当前分支）
+  在**提交详情工具栏**，样式与「刷新」一致。
 - **远程操作**：推送（-u 设上游）、拉取（--ff-only）、Fetch --prune。
 - **历史**：图形化提交图（Git Graph 风格：主线靠左、分支向右分叉后竖直向下，
   每条分支按列着色；HEAD 为空心圆，其余为实心圆点），点击提交看完整 diff；支持
@@ -182,8 +190,8 @@ $HOME/.nvm/versions/node/v22.19.0/bin/npm install --omit=dev --no-audit --no-fun
 
 ## 全局技能库（dsh-skills）
 
-内置第三方插件 **dsh-skills**（[CocoSgt/dsh-skills](https://github.com/CocoSgt/dsh-skills)，
-取代原先只读的 `dsh-skill-manager`）。把散落的技能汇成全局库：Claude Code 的
+内置第三方插件 **dsh-skills**（[CocoSgt/dsh-skills](https://github.com/CocoSgt/dsh-skills)）。
+把散落的技能汇成全局库：Claude Code 的
 `~/.claude/skills`、项目目录、`.skill` 包等统一入库到 `$DSH_HOME/skills`（官方
 skill-filesystem 默认扫描根，watcher 实时），入库即出现在输入框的「/」斜杠菜单；
 设置页侧栏有「技能」导航页。
@@ -240,12 +248,12 @@ Streamable HTTP），点「保存」即热更新生效（无需重启进程）�
 > `remove`/`list` 用包全名（如 `@scope/name`），以 `list` 输出为准。
 >
 > **两类插件都支持**：声明 `dsh.bundle` 的插件（如 git/updater）装完自动加入 bundle 层；
-> 只声明 `dsh.client` 的纯前端插件（如 `@frostgao` 的主题/用量）`dsh plugin add` 不会自动激活，
+> 只声明 `dsh.client` 的纯前端插件（如 `@frostgao` 的主题插件）`dsh plugin add` 不会自动激活，
 > `plugins.mjs` 会在 profile 的用户层 `cordis.patch.yml` 里自动补一条激活 row，移除时一并清理。
 
 ## 黑金主题（@frostgao/dsh-theme-blackgold）
 
-内置 `@frostgao/dsh-theme-blackgold`（与用量插件同作者的配搭主题），作为**应用内插件**打包
+内置 `@frostgao/dsh-theme-blackgold`（@frostgao 出品的配搭主题），作为**应用内插件**打包
 （源码在 `plugins/@frostgao/dsh-theme-blackgold`），把 Web 界面重绘成**黑金配色**
 （黑白底 + 金色强调，浅色 / 深色两套）：
 
@@ -255,12 +263,28 @@ Streamable HTTP），点「保存」即热更新生效（无需重启进程）�
 - 纯演示层覆盖（走 `dsh-client-ui-theme` 的 token 覆盖），尊重 `prefers-reduced-motion`。
 
 该插件是**客户端专属**（`immediately: true`，无需在设置里开开关），随插件清单在启动时
-自动加载生效。纯 ESM、无原生二进制，依赖的 `@deepseek-ai/dsh-client-ui-theme` 为 rc.8 自带。
+自动加载生效。纯 ESM、无原生二进制，依赖的 `@deepseek-ai/dsh-client-ui-theme` 为 0.1.1-rc.2 自带。
 
 | 文件 | 作用 |
 |---|---|
 | `plugins/@frostgao/dsh-theme-blackgold/` | 插件源码（宿主半为空占位；浏览器半：黑金 token 覆盖） |
 | `theme-blackgold.patch.yml` | 注册该插件（launcher 经 `--patch` 传入） |
+
+## 会话费用统计（dsh-cost-meter）
+
+内置 **dsh-cost-meter**（[Han-1413141/dsh-cost-meter](https://github.com/Han-1413141/dsh-cost-meter)，
+v1.5.36），提供会话级费用统计：
+
+- **费用**：本会话成本、当日费用、历史记录；内置 90+ 模型价格目录自动匹配，与官方价格一键同步。
+- **余额 / 额度**：官方余额、可配自定义 Provider 余额（任意 HTTP 端点）与余额进度条；主流
+  Coding Plan 订阅额度查询与显示（7 家，含 SCNet Token Plan 本地 Credits 计量）。
+- **峰谷计价**：峰谷时段显示，切换前弹窗 / 系统通知提醒（位置 / 提前量 / 类型可配）。
+- 界面中英双语；配置在 设置 → 插件 → dsh-cost-meter。
+
+| 文件 | 作用 |
+|---|---|
+| `plugins/dsh-cost-meter/` | 插件源码（宿主：costMeter 服务 + ledger；浏览器半：费用展示与设置） |
+| `billing.patch.yml` | 注册该插件（launcher 经 `--patch` 传入；`name:` 必须带引号，linkBundledPlugins 只收集带引号的 name） |
 
 
 launcher 还会把后端目录（含内置 `node` 二进制）放在 `PATH` 最前，确保插件跑视觉

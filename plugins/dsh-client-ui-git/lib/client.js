@@ -17,15 +17,15 @@ window.__ModuleLoader__.load({
     const css = [
       // full-screen overlay panel
       ".dshGitOverlay{position:fixed;inset:0;z-index:1200;display:flex;flex-direction:column;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary)}",
-      ".dshGitTop{flex:none;display:flex;align-items:center;gap:10px;height:48px;padding:0 16px;border-bottom:1px solid var(--dsw-alias-border-l2)}",
+      ".dshGitTop{flex:none;display:flex;align-items:center;gap:8px;height:48px;padding:0 16px;border-bottom:1px solid var(--dsw-alias-border-l2)}",
       ".dshGitTopWrap{position:relative}",
       ".dshGitBranchBtn{cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:5px}",
       ".dshGitBranchBtn:hover{border-color:var(--dsw-alias-state-business-primary)}",
       ".dshGitBranchActive{border-color:var(--dsw-alias-state-business-primary);color:var(--dsw-alias-state-business-primary)}",
       ".dshGitBranchCaret{font-size:10px;opacity:.7}",
       ".dshGitCommitOps{display:flex;align-items:center;gap:6px;flex:none}",
-      ".dshGitForkInput{width:150px;height:26px;font-size:12px}",
-      ".dshGitTopMenu{left:auto;right:10px;top:calc(100% - 1px);min-width:340px}",
+      ".dshGitForkInput{width:128px;height:28px;font-size:12px}",
+      ".dshGitTopMenu{left:auto;right:10px;top:calc(100% - 1px);width:320px;min-width:0;max-width:340px}",
       ".dshGitTopTitle{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--dsw-alias-label-primary);min-width:0}",
       ".dshGitBranch{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--dsw-alias-state-success-primary);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
       ".dshGitUpstream{color:var(--dsw-alias-label-tertiary);font-family:ui-monospace,Menlo,monospace;font-size:12px}",
@@ -37,7 +37,8 @@ window.__ModuleLoader__.load({
       ".dshGitHistoryBand{flex:0 0 auto;max-height:42%;min-height:96px;display:flex;flex-direction:column;border-bottom:1px solid var(--dsw-alias-border-l2);overflow:hidden}",
       ".dshGitLowerSplit{flex:1;min-height:0;display:flex;flex-direction:row;min-width:0}",
       ".dshGitCommitBar{flex:none;display:flex;flex-direction:row;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);min-width:0}",
-      ".dshGitCommitBar .dshGitInput{flex:1;min-width:0;height:30px;font-size:12px}",
+      ".dshGitCommitBar .dshGitInput{flex:1;min-width:0;font-size:12px}",
+      ".dshGitCommitBar .dshGitMsgInput{height:auto;min-height:30px;max-height:96px;resize:vertical;line-height:18px;padding:6px 8px;overflow-y:auto;box-sizing:border-box;font-family:inherit}",
       ".dshGitIconBtn{width:30px;height:30px;flex:none;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);cursor:pointer;padding:0}",
       ".dshGitIconBtn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}",
       ".dshGitIconBtn:disabled{opacity:.4;cursor:not-allowed}",
@@ -52,13 +53,18 @@ window.__ModuleLoader__.load({
       ".dshGitMoreChip{flex:none;display:inline-flex;align-items:center;gap:3px;height:24px;padding:0 9px;border:1px dashed var(--dsw-alias-border-l2);border-radius:999px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);font-size:12px;cursor:pointer;white-space:nowrap}",
       ".dshGitMoreChip:hover{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-state-business-primary)}",
       ".dshGitBranchMenu{position:absolute;top:calc(100% - 1px);left:10px;right:10px;z-index:60;display:flex;flex-direction:column;gap:8px;padding:10px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);border-radius:10px;box-shadow:var(--dsw-shadow-lv3);max-height:280px;overflow:auto}",
-      ".dshGitBranchMenuList{display:flex;flex-wrap:wrap;gap:6px}",
+      ".dshGitBranchMenuList{display:flex;flex-direction:column;gap:4px;align-items:stretch}",
       ".dshGitBranchMenuActions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--dsw-alias-border-l1);padding-top:8px}",
       ".dshGitBranchMenuActions .dshGitInput{width:140px;height:26px;font-size:12px}",
       ".dshGitBranchGroupLabel{flex:none;font-size:11px;color:var(--dsw-alias-label-tertiary);margin:0 2px 0 8px;text-transform:uppercase;letter-spacing:.4px}",
       ".dshGitBranchChip{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:999px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);font-family:ui-monospace,Menlo,monospace;font-size:12px;white-space:nowrap;flex:none}",
       ".dshGitBranchChipCurrent{color:var(--dsw-alias-state-business-primary);border-color:var(--dsw-alias-state-business-primary)}",
       ".dshGitBranchChipRemote{opacity:.75}",
+      ".dshGitBranchChipSwitch{cursor:pointer}",
+      ".dshGitBranchChipSwitch:hover{border-color:var(--dsw-alias-state-business-primary);color:var(--dsw-alias-label-primary)}",
+      ".dshGitBranchMenuList .dshGitBranchChip{border:none;background:transparent;width:100%;justify-content:flex-start}",
+      ".dshGitBranchMenuList .dshGitBranchChipSwitch:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}",
+      ".dshGitBranchMenuList .dshGitBranchGroupLabel{margin:2px 2px 0 8px}",
       ".dshGitBranchChipDot{font-size:8px;color:var(--dsw-alias-state-business-primary)}",
       ".dshGitBranchChipName{max-width:180px;overflow:hidden;text-overflow:ellipsis}",
       ".dshGitBranchChip .dshGitMiniBtn{background:0 0;border:none;color:inherit;cursor:pointer;font-size:11px;padding:0 2px;line-height:1}",
@@ -469,6 +475,7 @@ window.__ModuleLoader__.load({
       const [error, setError] = react.useState(null);
       const [output, setOutput] = react.useState("");
       const [message, setMessage] = react.useState("");
+      const msgRef = react.useRef(null);
       const [diffFile, setDiffFile] = react.useState(null);
       const diffFileRef = react.useRef(null);
       const [diffText, setDiffText] = react.useState("");
@@ -657,19 +664,22 @@ window.__ModuleLoader__.load({
         ],
       });
 
-      const branchChip = (b, isRemote) => jsxs("span", {
-        key: b.name,
-        className: "dshGitBranchChip" + (b.current ? " dshGitBranchChipCurrent" : "") + (isRemote ? " dshGitBranchChipRemote" : ""),
-        title: (b.subject ? b.subject + "\n" : "") + b.hash,
-        children: [
-          b.current ? jsx("span", { className: "dshGitBranchChipDot", children: "\u25CF" }) : null,
-          jsx("span", { className: "dshGitBranchChipName", children: b.name }),
-          b.ahead > 0 || b.behind > 0 ? jsx("span", { className: "dshGitBranchTrack", children: "\u2191" + b.ahead + " \u2193" + b.behind }) : null,
-          !isRemote && !b.current ? jsx("button", { className: "dshGitMiniBtn", title: "切换到此分支", onClick: () => runMutation("switchBranch", { name: b.name }), children: "\u21E5" }) : null,
-          !isRemote ? jsx("button", { className: "dshGitMiniBtn", title: "重命名", onClick: () => renameBranch(b.name), children: "\u270E" }) : null,
-          !isRemote && !b.current ? jsx("button", { className: "dshGitMiniBtn dshGitMiniBtnDanger", title: "删除", onClick: () => setConfirmDelete(b.name), children: "\u2715" }) : null,
-        ],
-      });
+      const branchChip = (b, isRemote) => {
+        const switchable = !b.current;
+        return jsxs("span", {
+          key: b.name,
+          className: "dshGitBranchChip" + (b.current ? " dshGitBranchChipCurrent" : "") + (isRemote ? " dshGitBranchChipRemote" : "") + (switchable ? " dshGitBranchChipSwitch" : ""),
+          title: (b.subject ? b.subject + "\n" : "") + b.hash + (switchable ? "\n点击切换" : "\n当前分支"),
+          onClick: switchable ? () => runMutation("switchBranch", { name: b.name }) : undefined,
+          children: [
+            b.current ? jsx("span", { className: "dshGitBranchChipDot", children: "\u25CF" }) : null,
+            jsx("span", { className: "dshGitBranchChipName", children: b.name }),
+            b.ahead > 0 || b.behind > 0 ? jsx("span", { className: "dshGitBranchTrack", children: "\u2191" + b.ahead + " \u2193" + b.behind }) : null,
+            !isRemote ? jsx("button", { className: "dshGitMiniBtn", title: "重命名", onClick: (e) => { e.stopPropagation(); renameBranch(b.name); }, children: "\u270E" }) : null,
+            !isRemote && !b.current ? jsx("button", { className: "dshGitMiniBtn dshGitMiniBtnDanger", title: "删除", onClick: (e) => { e.stopPropagation(); setConfirmDelete(b.name); }, children: "\u2715" }) : null,
+          ],
+        });
+      };
 
       const GIT_ICONS = {
         check: '<path d="M4 8.5l2.5 2.5L12 6" />',
@@ -711,7 +721,7 @@ window.__ModuleLoader__.load({
           return;
         }
         const r = await runMutation("commit", { message, files: staged.map((f) => f.path) });
-        if (r.ok) setMessage("");
+        if (r.ok) { setMessage(""); if (msgRef.current) msgRef.current.style.height = "auto"; }
       };
 
       const doMerge = async (target) => {
@@ -964,7 +974,7 @@ window.__ModuleLoader__.load({
             "Git",
           ] }),
           branch
-            ? jsx("span", { className: "dshGitBranch dshGitBranchBtn" + (branchMenu === "top" ? " dshGitBranchActive" : ""), onClick: () => setBranchMenu(branchMenu === "top" ? null : "top"), title: "分支管理（点击切换/新建/合并）", children: [
+            ? jsx("span", { className: "dshGitBranch dshGitBranchBtn" + (branchMenu === "top" ? " dshGitBranchActive" : ""), onClick: () => setBranchMenu(branchMenu === "top" ? null : "top"), title: "分支切换", children: [
                 jsx(primitives.IconBranchOutline16, { size: 14 }),
                 branch,
                 jsx("span", { className: "dshGitBranchCaret", children: "\u25BE" }),
@@ -977,26 +987,16 @@ window.__ModuleLoader__.load({
           selectedCommit
             ? jsxs("span", { className: "dshGitCommitOps", children: [
                 jsx("span", { className: "dshGitUpstream", children: selectedCommit.slice(0, 7) }),
-                jsx(primitives.Button, { variant: "ghost", size: "xs", onClick: () => setBranchFromOpen((v) => !v), children: branchFromOpen ? "收起" : "fork" }),
+                jsx(primitives.Button, { variant: "outline", size: "sm", style: { whiteSpace: "nowrap" }, onClick: () => setBranchFromOpen((v) => !v), children: branchFromOpen ? "收起" : "新建" }),
                 branchFromOpen
                   ? jsxs(Fragment, { children: [
                       jsx("input", { className: "dshGitInput dshGitForkInput", placeholder: "新分支名", value: newBranchName, onChange: (e) => setNewBranchName(e.target.value), onKeyDown: (e) => { if (e.key === "Enter") createBranch(selectedCommit); } }),
-                      jsx(primitives.Button, { variant: "primary", size: "xs", onClick: () => createBranch(selectedCommit), disabled: !newBranchName.trim() || busy, children: "创建" }),
+                      jsx(primitives.Button, { variant: "primary", size: "sm", style: { whiteSpace: "nowrap" }, onClick: () => createBranch(selectedCommit), disabled: !newBranchName.trim() || busy, children: "创建" }),
                     ] })
                   : null,
-                jsx(primitives.Button, { variant: "ghost", size: "xs", onClick: () => doMerge(selectedCommit), disabled: busy, title: "把选中的提交合并到当前分支", children: "merge" }),
+                jsx(primitives.Button, { variant: "outline", size: "sm", style: { whiteSpace: "nowrap" }, onClick: () => doMerge(selectedCommit), disabled: busy, title: "把选中的提交合并到当前分支", children: "合并" }),
               ] })
             : null,
-          jsx("input", {
-            className: "dshGitInput",
-            style: { width: "220px", flex: "none", fontSize: "11px" },
-            placeholder: "仓库路径（如 ~/projects/foo）",
-            value: pathInput || activePath || "",
-            title: activePath || "输入 Git 仓库路径",
-            onChange: (e) => setPathInput(e.target.value),
-            onKeyDown: (e) => { if (e.key === "Enter" && pathInput.trim()) { setCwd(pathInput.trim()); refresh(pathInput.trim()); } },
-          }),
-          jsx(primitives.Button, { variant: "outline", size: "sm", onClick: () => { if (pathInput.trim()) { setCwd(pathInput.trim()); refresh(pathInput.trim()); } }, disabled: !pathInput.trim() || loading, children: "加载" }),
           jsx(primitives.Button, { variant: "outline", size: "sm", onClick: () => refresh(), disabled: loading, children: loading ? "刷新中…" : "刷新" }),
           branchMenu === "top"
             ? jsx("div", { className: "dshGitBranchMenu dshGitTopMenu", children: [
@@ -1005,15 +1005,6 @@ window.__ModuleLoader__.load({
                   branches.filter((b) => !b.remote).map((b) => branchChip(b, false)),
                   jsx("span", { className: "dshGitBranchGroupLabel", children: "远程" }),
                   branches.filter((b) => b.remote).map((b) => branchChip(b, true)),
-                ] }),
-                jsxs("div", { className: "dshGitBranchMenuActions", children: [
-                  jsx("input", { className: "dshGitInput", placeholder: "新分支名（从 HEAD 创建并切换）", value: newBranchName, onChange: (e) => setNewBranchName(e.target.value), onKeyDown: (e) => { if (e.key === "Enter") createBranch(); } }),
-                  jsx(primitives.Button, { variant: "primary", size: "xs", onClick: () => createBranch(), disabled: !newBranchName.trim() || busy, children: "新建" }),
-                  jsx("select", { className: "dshGitInput", value: mergeTarget, onChange: (e) => setMergeTarget(e.target.value), children: [
-                    jsx("option", { value: "", children: "合并分支…" }),
-                    ...branches.filter((b) => !b.remote && !b.current).map((b) => jsx("option", { key: b.name, value: b.name, children: b.name })),
-                  ] }),
-                  jsx(primitives.Button, { variant: "outline", size: "xs", onClick: () => doMerge(mergeTarget), disabled: !mergeTarget || busy, children: "合并" }),
                 ] }),
               ] })
             : null,
@@ -1098,12 +1089,14 @@ jsxs("div", { className: "dshGitCol", style: { flex: 1, borderRight: "none" }, c
           ] }),
           // ── commit bar: full width at the bottom ──
           jsxs("div", { className: "dshGitCommitBar", children: [
-jsx("input", {
-              className: "dshGitInput",
-              placeholder: "提交说明，Enter 提交",
+jsx("textarea", {
+              ref: msgRef,
+              className: "dshGitInput dshGitMsgInput",
+              rows: 1,
+              placeholder: "提交说明（Enter 换行，⌘/Ctrl+Enter 提交）",
               value: message,
-              onChange: (e) => setMessage(e.target.value),
-              onKeyDown: (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); commitStaged(); } },
+              onChange: (e) => { setMessage(e.target.value); if (msgRef.current) { msgRef.current.style.height = "auto"; msgRef.current.style.height = Math.min(msgRef.current.scrollHeight, 96) + "px"; } },
+              onKeyDown: (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commitStaged(); } },
             }),
             gitIconBtn(commitStaged, "提交（已暂存 " + staged.length + "）", "check", busy || !message.trim() || staged.length === 0, true),
             gitIconBtn(() => runMutation("amend", { message: message.trim() || undefined }), "Amend 修改上一次提交", "edit", busy),

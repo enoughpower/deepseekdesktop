@@ -53,6 +53,13 @@ final class BackendController {
         var env = ProcessInfo.processInfo.environment
         env["HOME"] = NSHomeDirectory()
         env["DSH_TELEMETRY_DISABLED"] = "1"
+        // The desktop app has a dedicated home (~/Library/Application Support/
+        // DeepSeekHarness). A stray DSH_HOME inherited from the launching
+        // environment (e.g. a dsh CLI / Web terminal that set DSH_HOME) must
+        // NOT redirect the backend to a foreign home: that can double-register
+        // bundled plugins (duplicate loader entry) and break credentials.
+        // Remove it so launcher.mjs always resolves the app's own home.
+        env.removeValue(forKey: "DSH_HOME")
         proc.environment = env
 
         let outPipe = Pipe()

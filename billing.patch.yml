@@ -1,13 +1,6 @@
-# Desktop-app overlay: register the usage/cost plugin.
-#
-# `usage-cost` is the third-party `@frostgao/dsh-usage-cost` plugin: a
-# per-session cost badge, per-reply cost chips, and a "用量" settings page
-# with an interactive trend chart.
-#
-# The @frostgao package lives in the app backend's node_modules
-# (node_modules/@frostgao/dsh-usage-cost) and is surfaced to the profile via a
-# symlink at $DSH_HOME/profiles/node_modules/@frostgao/dsh-usage-cost — the same
-# convention used for the other desktop overlay plugins (dsh-git, dsh-vision…).
+# Desktop-app overlay: register the session cost meter (dsh-cost-meter).
+# NOTE: the name must be quoted — linkBundledPlugins only collects quoted
+# name: fields from - insert: blocks.
 - insert:
-    - id: usage-cost
-      name: '@frostgao/dsh-usage-cost'
+    - id: cost-meter
+      name: 'dsh-cost-meter'

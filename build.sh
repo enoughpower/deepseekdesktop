@@ -205,7 +205,11 @@ codesign --force --deep --sign - "$APP" 2>/dev/null || true
 build_dmg() {
   echo "==> packaging DMG"
   local STAGE="$DIST/dmg-stage"
-  local DMG_NAME="DeepSeekHarness-${VERSION}-${ARCH}.dmg"
+  # Naming: DeepSeekHarness-{version}-{build date MMddHHmm}-{full|lite}.dmg
+  local DMG_DATE="$(date +%m%d%H%M)"
+  local DMG_MODE="full"
+  if [ "$KEEP_EXTRA_PROVIDERS" = "0" ]; then DMG_MODE="lite"; fi
+  local DMG_NAME="DeepSeekHarness-${VERSION}-${DMG_DATE}-${DMG_MODE}.dmg"
   local DMG_PATH="$DIST/$DMG_NAME"
   local RWD="$DIST/dmg-rw.dmg"
   rm -rf "$STAGE" "$RWD"
